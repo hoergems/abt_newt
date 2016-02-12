@@ -1,0 +1,1 @@
+mencoder "mf://*.png" -mf fps=3 -o out.avi -ovc lavc -lavcopts vcodec=msmpeg4v2:vbitrate=640

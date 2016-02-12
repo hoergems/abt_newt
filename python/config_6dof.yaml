@@ -1,0 +1,151 @@
+# Verbose
+verbose: True
+verbose_rrt: False
+
+environment_file: env_6dof.xml
+robot_file: test_6dof.urdf
+
+################################################
+## Dynamic and physics parameters of the robot
+################################################
+
+# Determines if the manipulator dynamics have to be considered
+dynamic_problem: True
+
+# The simulation step size
+simulation_step_size: 0.001
+
+# The gravity constant
+gravity: 9.81
+
+#################################################
+
+planning_velocity: 4.0
+
+rrt_stretching_factor: 1.0
+
+# Number of simulation runs per covariance value
+num_simulation_runs: 50
+
+# The joint control rate
+control_rate: 30.0
+
+# The initial state of the robot (has to be consistent with the number of degrees of freedom)
+#init_state: [0.7, 0.0, 1.5, 0.0, 0.0, 0.0]
+init_state: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+# The number of actions per joint
+num_actions_per_joint: 2
+
+enforce_constraints: True
+
+#Number of bins for the histograms
+num_bins: 201
+
+################################################
+## Uncertainty parameters
+################################################1
+
+# The minimum joint state covariance
+min_process_covariance: 0.5
+
+# The maximum joint state covariance
+max_process_covariance: 10.0
+
+min_observation_covariance: 1.0
+
+max_observation_covariance: 10.0
+
+# The number of covariance steps
+covariance_steps: 10
+
+inc_covariance: observation
+
+################################################
+## Reward parameters
+################################################
+
+# Reward params
+discount_factor: 0.999999
+
+# A penalty for illegal moves
+illegal_move_penalty: 50.0
+
+# A penalty for illegal actions (such as zero velocity for all joints)
+illegal_action_penalty: 50.0
+
+# A penalty for doing one step
+step_penalty: 1.0
+
+# The exit reward
+exit_reward: 1000.0
+
+################################################
+
+#Maximum distance between two observations to be grouped together
+max_observation_distance: 300000.14
+
+# Maximum allowed steps to reach the goal
+num_steps: 100
+
+# Planning time per step (in milliseconds)
+planning_time: 1000.0
+
+# Determines if continuous collision checks are used for the heuristic function
+continuous_collision_check: False
+
+# Determines if the existance of a collision-free linear path should be checked first before attempting
+# to use RRT
+check_linear_path: False
+
+# Planner for the heuristic function
+planner: RRTConnect
+
+# Number of histories per step
+histories_per_step: 200
+
+# The particle filter to use (default or observationModel)
+particle_filter: observationModel
+
+# The minimum number of particles per belief
+particle_count: 500
+
+# Minimum number of effective particles below which resampling is happening
+num_effective_particles: 1001
+
+# Strategy how to sample states from a given belief.
+# default = uniform sampling (fast)
+# weighted = sampling according to sample weights (slow)
+# max = sample particle with maximum weight
+# weighted_lazy = sampling according to sample weights, 
+# but only consider num_samples_weighted_lazy samples of the set
+state_sampling_strategy: default
+
+# Number of samples to consider when weighted_lazy sampling strategy is used
+num_samples_weighted_lazy: 10
+
+#Maximum time to replenish particle (in seconds)
+particle_replenish_timeout: 4.0
+
+# The maximum number of particles to plot
+particle_plot_limit: 50
+
+# Saves the particles
+save_particles: True
+
+# Plot the particles
+plot_particles: False
+
+# Prunes the tree after every step
+prune_every_step: False
+
+# Save the generated policy
+save_policy: False
+
+# Load the inital policy
+load_initial_policy: False
+
+# Time (in milliseconds) to generate the initial policy
+initial_planning_time: 3000.0
+
+show_viewer: True
