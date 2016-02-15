@@ -21,10 +21,11 @@ namespace shared {
 ManipulatorState::ManipulatorState(JointValues values, boost::shared_ptr<shared::Robot> &robot):
     solver::Vector(),    
     jointValues_(values),
-    end_effector_position_(),
+    end_effector_position_(std::make_shared<std::vector<double>>()),
+    robot_(robot),
 	weight_(1.0),
 	previous_state_(nullptr){
-	std::vector<double> ee_pos;
+	/**std::vector<double> ee_pos;
 	std::vector<double> joint_angles;
 	std::vector<double> jv_vec = jointValues_.asVector();
 	for (size_t i = 0; i < jv_vec.size() / 2; ++i) {
@@ -32,7 +33,18 @@ ManipulatorState::ManipulatorState(JointValues values, boost::shared_ptr<shared:
 	}
 	
 	robot->getEndEffectorPosition(joint_angles, ee_pos);
-	end_effector_position_ = std::make_shared<std::vector<double>>(ee_pos);
+	end_effector_position_ = std::make_shared<std::vector<double>>(ee_pos);*/
+	
+}
+
+ManipulatorState::ManipulatorState(JointValues values, const boost::shared_ptr<shared::Robot> &robot, double weight):
+	solver::Vector(),
+	jointValues_(values),
+	end_effector_position_(std::make_shared<std::vector<double>>()),
+	robot_(robot),
+	weight_(weight),
+	previous_state_(nullptr){
+	
 }
 
 ManipulatorState::ManipulatorState(JointValues values, std::vector<double> ee_position):
@@ -53,8 +65,15 @@ ManipulatorState::ManipulatorState(JointValues values, std::vector<double> ee_po
 	
 }
 
-std::unique_ptr<solver::Point> ManipulatorState::copy() const {	
-	return std::make_unique<ManipulatorState>(jointValues_, *(end_effector_position_), weight_);
+std::unique_ptr<solver::Point> ManipulatorState::copy() const {
+	if (end_effector_position_->size() != 0) {
+		return std::make_unique<ManipulatorState>(jointValues_, *(end_effector_position_), weight_);
+	}
+	if (!robot_) {
+		cout << "WHAAAAAAT" << endl;
+		sleep(1);
+	}
+	return std::make_unique<ManipulatorState>(jointValues_, robot_, weight_);
 }
 
 double ManipulatorState::distanceTo(solver::State const &otherState) const {
@@ -70,8 +89,28 @@ std::vector<double> ManipulatorState::asVector() const {
     return jointValues_.asVector();    
 }
 
+void ManipulatorState::make_end_effector_position() const {
+	std::vector<double> ee_pos;
+	std::vector<double> joint_angles;
+	std::vector<double> jv_vec = jointValues_.asVector();
+	for (size_t i = 0; i < jv_vec.size() / 2; ++i) {
+		joint_angles.push_back(jv_vec[i]);
+	}
+	if (!robot_) {
+		cout << "robot_ is null" << endl;
+		cout << end_effector_position_->size() << endl;
+		sleep(1);
+	}
+	robot_->getEndEffectorPosition(joint_angles, ee_pos);
+	end_effector_position_ = std::make_shared<std::vector<double>>(ee_pos);
+}
+
 std::shared_ptr<std::vector<double> > ManipulatorState::getEndEffectorPosition() const {
-    return end_effector_position_;
+	if (end_effector_position_->size() == 0) {
+		make_end_effector_position();
+	}
+	
+	return end_effector_position_;
 }
 
 bool ManipulatorState::equals(solver::State const &otherState) const {
@@ -129,6 +168,10 @@ void ManipulatorState::serialize(std::ostream &os) const {
 	    os << " ";	            
 	}
 	
+	if (end_effector_position_->size() == 0) {
+		make_end_effector_position();
+	}
+	
 	for (size_t i = 0; i < end_effector_position_->size(); i++) {
 	    os << end_effector_position_->at(i);	    
 	    os << " ";	    
@@ -145,6 +188,11 @@ void ManipulatorState::print(std::ostream &os) const {
         }        
     }
     os << endl;
+    
+    if (end_effector_position_->size() == 0) {
+    	make_end_effector_position();
+    }
+    
     os << "End effector position: ";
     for (size_t i = 0; i < end_effector_position_->size(); i++) {
         os << end_effector_position_->at(i);
