@@ -13,6 +13,7 @@
 #include "fcl/shape/geometric_shapes.h"
 #include "fcl/shape/geometric_shapes_utility.h"
 #include "robot.hpp"
+#include <boost/timer.hpp>
 
 #include <iostream>
 #include <mutex>

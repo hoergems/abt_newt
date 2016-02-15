@@ -80,8 +80,7 @@ ompl::base::PlannerStatus shared::RRTConnect::solve(const base::PlannerTerminati
         }
 
         /* sample random state */
-        sampler_->sampleUniform(rstate);
-
+        sampler_->sampleUniform(rstate);        
         GrowState gs = growTree(tree, tgi, rmotion);
 
         if (gs != TRAPPED)
@@ -92,13 +91,15 @@ ompl::base::PlannerStatus shared::RRTConnect::solve(const base::PlannerTerminati
             /* attempt to connect trees */
 
             /* if reached, it means we used rstate directly, no need top copy again */
-            if (gs != REACHED)
+            if (gs != REACHED) {
                 si_->copyState(rstate, tgi.xstate);
+            }
 
             GrowState gsc = ADVANCED;
             tgi.start = startTree;
-            while (gsc == ADVANCED)
+            while (gsc == ADVANCED) {            	
                 gsc = growTree(otherTree, tgi, rmotion);
+            }
 
             Motion *startMotion = startTree ? tgi.xmotion : addedMotion;
             Motion *goalMotion  = startTree ? addedMotion : tgi.xmotion;
@@ -178,12 +179,15 @@ ompl::geometric::RRTConnect::GrowState shared::RRTConnect::growTree(TreeData &tr
     // if we are in the goal tree, we need to check the motion in reverse, but checkMotion() assumes the first state it receives as argument is valid,
     // so we check that one first
     bool validMotion = false;
-    if (tgi.start) {     	
+    validMotion = si_->checkMotion(nmotion->state, dstate);
+    /**if (tgi.start) {
+    	cout << "check for start tree" << endl;
     	validMotion = si_->checkMotion(nmotion->state, dstate);    	
     }
-    else {
+    else { 
+    	cout << "check for goal tree" << endl;
     	validMotion = si_->getStateValidityChecker()->isValid(dstate) && si_->checkMotion(dstate, nmotion->state);
-    }
+    }*/
     
     //bool validMotion = tgi.start ? si_->checkMotion(nmotion->state, dstate) : si_->getStateValidityChecker()->isValid(dstate) && si_->checkMotion(dstate, nmotion->state);
 

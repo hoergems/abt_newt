@@ -9,6 +9,7 @@
 //#include "/usr/local/include/fcl/math/matrix_3f.h"
 #include "fcl/math/matrix_3f.h"
 #include <Eigen/Dense>
+#include <boost/timer.hpp>
 
 namespace shared {
 
@@ -47,6 +48,8 @@ namespace shared {
             std::vector<std::vector<double>> links_;
             
             Eigen::MatrixXd getTransformationMatr(double sigma_n, double d_n, double a_n, double alpha_n) const;
+            
+            Eigen::MatrixXd getTransformationMatrRot(double sigma_n, double d_n, double a_n, double alpha_n, double theta_n) const;
             
             Eigen::MatrixXd transform(double x, double y, double z, double roll, double pitch, double yaw) const;
             

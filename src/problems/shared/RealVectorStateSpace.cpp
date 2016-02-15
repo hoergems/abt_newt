@@ -16,8 +16,8 @@ void shared::RealVectorStateSampler::sampleUniform(ompl::base::State *state)
     for (unsigned int i = 0 ; i < dim ; ++i) {
         rstate->values[i] = rng_.uniformReal(bounds.low[i], bounds.high[i]);
     }
-    rstate->clearCollisionObjects();
-    cout << "COLLISION OBJECTS SIZE: " << rstate->getCollisionObjects().size() << endl;
+    //rstate->clearCollisionObjects();
+    
 }
 
 void shared::RealVectorStateSampler::sampleUniformNear(ompl::base::State *state, const ompl::base::State *near, const double distance)
@@ -115,16 +115,18 @@ void shared::RealVectorStateSpace::copyState(ompl::base::State *destination, con
 {    
 	memcpy(static_cast<shared::RealVectorStateSpace::StateType*>(destination)->values,
            static_cast<const shared::RealVectorStateSpace::StateType*>(source)->values, stateBytes_);
-    std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects(
-    		static_cast<const shared::RealVectorStateSpace::StateType*>(source)->getCollisionObjects());
+	std::shared_ptr<std::vector<std::shared_ptr<fcl::CollisionObject>>> coll_obj = 
+			static_cast<const shared::RealVectorStateSpace::StateType*>(source)->getCollisionObjects();
+    //std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects(
+    		//static_cast<const shared::RealVectorStateSpace::StateType*>(source)->getCollisionObjects());
     //static_cast<const shared::RealVectorStateSpace::StateType*>(source)->getCollisionObjects(collision_objects);
-    cout << "copy (" << static_cast<const shared::RealVectorStateSpace::StateType*>(source)->values[0] << ", "
+    /**cout << "copy (" << static_cast<const shared::RealVectorStateSpace::StateType*>(source)->values[0] << ", "
     		         << static_cast<const shared::RealVectorStateSpace::StateType*>(source)->values[1] << ", "
     		         << static_cast<const shared::RealVectorStateSpace::StateType*>(source)->values[2] << ") to ("
     		         << static_cast<const shared::RealVectorStateSpace::StateType*>(destination)->values[0] << ", "
     		         << static_cast<const shared::RealVectorStateSpace::StateType*>(destination)->values[1] << ", "
-    		         << static_cast<const shared::RealVectorStateSpace::StateType*>(destination)->values[2] << ")" << endl;
-    static_cast<shared::RealVectorStateSpace::StateType*>(destination)->setCollisionObjects(collision_objects);
+    		         << static_cast<const shared::RealVectorStateSpace::StateType*>(destination)->values[2] << ")" << endl;*/
+    static_cast<shared::RealVectorStateSpace::StateType*>(destination)->setCollisionObjects(coll_obj);
     
 }
 
@@ -283,8 +285,15 @@ void shared::RealVectorStateSpace::interpolate(const ompl::base::State *from, co
     const shared::RealVectorStateSpace::StateType *rfrom = static_cast<const shared::RealVectorStateSpace::StateType*>(from);
     const shared::RealVectorStateSpace::StateType *rto = static_cast<const shared::RealVectorStateSpace::StateType*>(to);
     const shared::RealVectorStateSpace::StateType *rstate = static_cast<shared::RealVectorStateSpace::StateType*>(state);
-    for (unsigned int i = 0 ; i < dimension_ ; ++i)
+    //cout << "interpolate..." << endl;
+    //cout << "resulting state: (";
+    for (unsigned int i = 0 ; i < dimension_ ; ++i) {
         rstate->values[i] = rfrom->values[i] + (rto->values[i] - rfrom->values[i]) * t;
+        //cout << rstate->values[i] << ", ";
+    }
+    //cout << ")" << endl;
+    
+    
 }
 
 ompl::base::StateSamplerPtr shared::RealVectorStateSpace::allocDefaultStateSampler() const

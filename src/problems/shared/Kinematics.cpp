@@ -57,10 +57,8 @@ Eigen::MatrixXd Kinematics::getPoseOfLinkN(const double &joint_angle,
 	if (n == 0) {
 		new_trans = getTransformationMatr(joint_angle, 0.0, 0.0, 0.0);		
 	}
-	else {
-		new_trans = getTransformationMatr(0.0, 0.0, links_[n-1][0], joint_origins_[n][3]);		
-		Eigen::MatrixXd rot_angle = getTransformationMatr(joint_angle, 0.0, 0.0, 0.0);		
-		new_trans *= rot_angle;		
+	else {		
+		new_trans = getTransformationMatrRot(0.0, 0.0, links_[n-1][0], joint_origins_[n][3], joint_angle);		
 	}
 	
 	return current_transform * new_trans;	
@@ -184,6 +182,15 @@ Eigen::MatrixXd Kinematics::getTransformationMatr(double sigma_n, double d_n, do
          0.0, sin(alpha_n), cos(alpha_n), d_n,
          0.0, 0.0, 0.0, 1.0;
     return b;
+}
+
+Eigen::MatrixXd Kinematics::getTransformationMatrRot(double sigma_n, double d_n, double a_n, double alpha_n, double theta_n) const{
+	Eigen::MatrixXd b(4,4);
+	b << -sin(sigma_n)*sin(theta_n)*cos(alpha_n) + cos(sigma_n)*cos(theta_n), -sin(sigma_n)*cos(alpha_n)*cos(theta_n) - sin(theta_n)*cos(sigma_n),  sin(alpha_n)*sin(sigma_n), a_n*cos(sigma_n),
+		 sin(sigma_n)*cos(theta_n) + sin(theta_n)*cos(alpha_n)*cos(sigma_n), -sin(sigma_n)*sin(theta_n) + cos(alpha_n)*cos(sigma_n)*cos(theta_n), -sin(alpha_n)*cos(sigma_n), a_n*sin(sigma_n),
+		 sin(alpha_n)*sin(theta_n), sin(alpha_n)*cos(theta_n), cos(alpha_n), d_n,
+		 0.0, 0.0, 0.0, 1.0;
+	return b;
 }
  
 }

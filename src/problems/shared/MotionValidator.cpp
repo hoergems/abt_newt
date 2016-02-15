@@ -38,7 +38,9 @@ bool MotionValidator::checkMotion(const std::vector<double> &s1,
 }
 
 /** Check if a motion between two states is valid. This assumes that state s1 is valid */
-bool MotionValidator::checkMotion(const ompl::base::State *s1, const ompl::base::State *s2) const {	
+bool MotionValidator::checkMotion(const ompl::base::State *s1, const ompl::base::State *s2) const {
+	//cout << "-------------------------------" << endl;
+	//cout << "MOTION VALIDATOR" << endl;
     std::vector<double> angles1;
     std::vector<double> angles2;
     
@@ -50,55 +52,40 @@ bool MotionValidator::checkMotion(const ompl::base::State *s1, const ompl::base:
     	return false;
     }
     
-    bool checkMotion1 = checkMotion(angles1, angles2, continuous_collision_);
+    //return checkMotion(angles1, angles2, continuous_collision_);
+    std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_start;
+    std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_goal;
+    //std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_start(
+    //		s1->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects());    
+    //std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_goal(
+    		//s2->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects());
     
-    std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_start(
-    		s1->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects());    
-    std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_goal(
-    		s2->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects());
-    
-    if (collision_objects_start.size() == 0) {
-    	cout << "create for angles: ";
-    	for (auto &k: angles1) {
-    		cout << k << ", ";
-    	}
-    	cout << endl;
-    	
+    if (!s1->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects()) {
         robot_->createRobotCollisionObjects(angles1, collision_objects_start);
-        cout << collision_objects_start[1]->getTranslation() << endl;
-        cout << collision_objects_start[1]->getRotation() << endl;
-        s1->as<shared::RealVectorStateSpace::StateType>()->setCollisionObjects(collision_objects_start);        
+        std::shared_ptr<std::vector<std::shared_ptr<fcl::CollisionObject>>> coll_objects =
+        		std::make_shared<std::vector<std::shared_ptr<fcl::CollisionObject>>>(collision_objects_start);       
+        s1->as<shared::RealVectorStateSpace::StateType>()->setCollisionObjects(coll_objects);        
     }
-    else {    	
-    	cout << "===================================" << endl;
-    	cout << "got for angles: ";
-    	for (auto &k: angles1) {
-    	    cout << k << ", ";
-    	}
-    	cout << endl;
-    	cout << collision_objects_start[1]->getTranslation() << endl;
-    	cout << collision_objects_start[1]->getRotation() << endl;
-    	/**cout << "-----------------------------------" << endl;
-    	robot_->createRobotCollisionObjects(angles1, collision_objects_start1);
-    	cout << collision_objects_start1[1]->getTranslation() << endl;
-    	cout << collision_objects_start1[1]->getRotation() << endl;*/
+    else {
+    	collision_objects_start = *(s1->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects().get());    	
     }
     
-    
-    
-    if (collision_objects_goal.size() == 0) {
+    if (!s2->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects()) {
         robot_->createRobotCollisionObjects(angles2, collision_objects_goal);
-        //s2->as<shared::RealVectorStateSpace::StateType>()->setCollisionObjects(collision_objects_goal);
-        
-    }    
+        //s2->as<shared::RealVectorStateSpace::StateType>()->setCollisionObjects(collision_objects_goal);        
+    } 
+    else {
+    	collision_objects_goal = *(s2->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects().get());
+    }
     
     bool checkMotion2 = checkMotion(collision_objects_start,
     		                        collision_objects_goal,
     		                        continuous_collision_);
-    //cout << "check motion1: " << checkMotion1 << endl;
-    //cout << "check motion2: " << checkMotion2 << endl;
-    sleep(1);
-    return checkMotion1;
+    /**if (checkMotion1 != checkMotion2) {
+    	cout << "AHHHHHHHHHHHH" << endl;
+    	sleep(10);
+    }*/
+    return checkMotion2;
 }
 
 bool MotionValidator::checkMotion(std::vector<std::shared_ptr<fcl::CollisionObject>> &collision_objects_start,

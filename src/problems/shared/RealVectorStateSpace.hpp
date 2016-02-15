@@ -40,7 +40,7 @@ class RealVectorStateSpace: public ompl::base::RealVectorStateSpace {
 public:
 	class StateType : public ompl::base::State  {
 	    public:
-	        StateType() : ompl::base::State(), collision_objects_() {
+	        StateType() : ompl::base::State(), collision_objects_(nullptr) {
 	        	
 	        }
 
@@ -61,29 +61,20 @@ public:
 	        /** \brief The value of the actual vector in R<sup>n</sup> */
 	        double *values;
 	        
-	        void setCollisionObjects(std::vector<std::shared_ptr<fcl::CollisionObject>> &collision_objects) const {
-	        	if (collision_objects.size() > 0) {
-	        		cout << "setting collision objects for state: " << values[0] << ", " << values[1] << ", " << values[2] << endl;
-	        	}
-	        	collision_objects_.clear();
-	            for (auto &k: collision_objects) {
-	        		collision_objects_.push_back(k);
-	        	}
+	        void setCollisionObjects(std::shared_ptr<std::vector<std::shared_ptr<fcl::CollisionObject>>> &collision_objects) const {	        	
+	        	collision_objects_ = collision_objects;
 	        }
 	        	    
-	        std::vector<std::shared_ptr<fcl::CollisionObject>> getCollisionObjects() const {
+	        std::shared_ptr<std::vector<std::shared_ptr<fcl::CollisionObject>>> getCollisionObjects() const {
 	        	return collision_objects_;
 	        	/**for (auto &k: collision_objects_) {
 	        		collision_objects.push_back(k);
 	        	}*/
 	        }
 	        
-	        void clearCollisionObjects() {
-	        	collision_objects_.clear();
-	        }
-	        
 	    private:
-	        mutable std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_;
+	        mutable std::shared_ptr<std::vector<std::shared_ptr<fcl::CollisionObject>>> collision_objects_; 
+	        //mutable std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_;
 	};
 	
 	RealVectorStateSpace(unsigned int dim = 0);

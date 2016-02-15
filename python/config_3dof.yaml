@@ -26,7 +26,7 @@ planning_velocity: 6.0
 rrt_stretching_factor: 1.0
 
 # Number of simulation runs per covariance value
-num_simulation_runs: 50
+num_simulation_runs: 1
 
 # The joint control rate
 control_rate: 30.0
@@ -52,12 +52,12 @@ min_process_covariance: 2.0
 # The maximum joint state covariance
 max_process_covariance: 10.0
 
-min_observation_covariance: 5.0
+min_observation_covariance: 2.0
 
 max_observation_covariance: 10.0
 
 # The number of covariance steps
-covariance_steps: 10
+covariance_steps: 1
 
 inc_covariance: observation
 
@@ -102,7 +102,7 @@ check_linear_path: False
 planner: RRTConnect
 
 # Number of histories per step
-histories_per_step: 10000
+histories_per_step: 1000000
 
 # The particle filter to use (default or observationModel)
 particle_filter: observationModel
@@ -148,4 +148,4 @@ load_initial_policy: False
 # Time (in milliseconds) to generate the initial policy
 initial_planning_time: 3000.0
 
-show_viewer: True
+show_viewer: False

@@ -89,7 +89,7 @@ void PathPlanner::setup() {
 		for (size_t i = 0; i < dim_; i++) {				
 			bounds.setLow(i, lowerJointPositionPonstraints[i]);
 			bounds.setHigh(i, upperJointPositionConstraints[i]);
-		}
+		}		
 	}
 	else {
 		for (size_t i = 0; i < dim_; i++) {

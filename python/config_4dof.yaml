@@ -131,7 +131,7 @@ particle_replenish_timeout: 4.0
 particle_plot_limit: 50
 
 # Saves the particles
-save_particles: True
+save_particles: False
 
 # Plot the particles
 plot_particles: False

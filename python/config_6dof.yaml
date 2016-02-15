@@ -1,6 +1,6 @@
 # Verbose
 verbose: True
-verbose_rrt: True
+verbose_rrt: False
 
 environment_file: env_6dof.xml
 robot_file: test_6dof.urdf
@@ -19,9 +19,9 @@ simulation_step_size: 0.001
 gravity: 9.81
 
 #################################################
-num_generated_goal_states: 5
+num_generated_goal_states: 1
 
-planning_velocity: 4.0
+planning_velocity: 6.0
 
 rrt_stretching_factor: 1.0
 
@@ -132,7 +132,7 @@ particle_replenish_timeout: 4.0
 particle_plot_limit: 50
 
 # Saves the particles
-save_particles: True
+save_particles: False
 
 # Plot the particles
 plot_particles: False
