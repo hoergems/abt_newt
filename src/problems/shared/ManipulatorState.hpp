@@ -37,7 +37,6 @@ class ManipulatorState : public solver::VectorState {
     ManipulatorState(JointValues values, boost::shared_ptr<shared::Robot> &robot);
     ManipulatorState(JointValues values, std::vector<double> ee_position);
     ManipulatorState(JointValues values, std::vector<double> ee_position, double weight);
-    ManipulatorState(JointValues values, const boost::shared_ptr<shared::Robot> &robot, double weight);
     virtual ~ManipulatorState() = default;
 
     std::unique_ptr<solver::State> copy() const override;
@@ -74,17 +73,13 @@ class ManipulatorState : public solver::VectorState {
                                                  
     double round_(const double &value, const int &precision) const;
     
-    void make_end_effector_position() const;
-    
     int roundingPrecision_ = 4;
 
-    mutable std::shared_ptr<std::vector<double> > end_effector_position_;
+    std::shared_ptr<std::vector<double> > end_effector_position_;
     
     mutable double weight_;
     
     std::shared_ptr<ManipulatorState> previous_state_;
-    
-    boost::shared_ptr<shared::Robot> robot_;
     
 };
 } /* namespace manipulator */

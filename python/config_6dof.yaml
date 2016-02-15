@@ -21,7 +21,7 @@ gravity: 9.81
 #################################################
 num_generated_goal_states: 5
 
-planning_velocity: 6.0
+planning_velocity: 4.0
 
 rrt_stretching_factor: 1.0
 
@@ -90,7 +90,7 @@ max_observation_distance: 300000.14
 num_steps: 100
 
 # Planning time per step (in milliseconds)
-planning_time: 1000.0
+planning_time: 100000.0
 
 # Determines if continuous collision checks are used for the heuristic function
 continuous_collision_check: False
@@ -103,7 +103,7 @@ check_linear_path: False
 planner: RRTConnect
 
 # Number of histories per step
-histories_per_step: 300000
+histories_per_step: 300
 
 # The particle filter to use (default or observationModel)
 particle_filter: observationModel
@@ -149,4 +149,4 @@ load_initial_policy: False
 # Time (in milliseconds) to generate the initial policy
 initial_planning_time: 3000.0
 
-show_viewer: False
+show_viewer: True
