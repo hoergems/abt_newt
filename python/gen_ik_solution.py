@@ -25,7 +25,7 @@ class IKSolutionGenerator:
         self.robot = robot        
         logging.info("IKSolutionGenerator: Setup")
         self.link_dimensions = v2_double()
-        self.robot.getActiveLinkDimensions(self.link_dimensions)        
+        self.robot.getActiveLinkDimensions(self.link_dimensions)             
         self.path_planner = PathPlanner(robot,
                                         delta_t,
                                         continuous_collision,
@@ -33,11 +33,13 @@ class IKSolutionGenerator:
                                         1.0,
                                         False,
                                         False,
-                                        planning_algorithm)
-        self.path_planner.setup()
+                                        planning_algorithm)       
+        
+        self.path_planner.setup()        
         self.path_planner.setObstacles(obstacles)
         self.obstacles = obstacles
         self.path_timeout = path_timeout
+        print "setup"
            
         
     def transform_goal(self, goal_position):

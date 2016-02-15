@@ -44,6 +44,10 @@ void Integrate::setRBDLInterface(std::shared_ptr<shared::RBDLInterface> &rbdl_in
 	rbdl_interface_ = rbdl_interface;
 }
 
+std::shared_ptr<shared::RBDLInterface> Integrate::getRBDLInterface() {
+	return rbdl_interface_;
+}
+
 void Integrate::setExternalForce(double &f_x, 
 		                         double &f_y, 
 								 double &f_z,
@@ -250,20 +254,29 @@ void Integrate::ode(const state_type &x , state_type &dxdt , double t) const {
 	if (rbdl_interface_) {		
 		VectorXd res = VectorXd::Zero(x.size() / 2);
 		std::vector<double> q;
-		std::vector<double> qdot;		
+		std::vector<double> qdot;
+		std::vector<double> rho;
 		for (size_t i = 0; i < x.size() / 2; i++) {
 			q.push_back(x[i]);
 			qdot.push_back(x[i + x.size() / 2]);
 			dxdt.push_back(x[i + x.size() / 2]);
+			rho.push_back(rho_[i] + zeta_[i]);
 		}
 		
-		rbdl_interface_->forward_dynamics(q, qdot, rho_, res);		
+		rbdl_interface_->forward_dynamics(q, qdot, rho, res);		
 		for (size_t i = 0; i < x.size() / 2; i++) {
 			dxdt.push_back(res(i));
 		}	
 		
 		return;
 	}
+	
+	cout << "dxdt eul: " << endl;
+	for (size_t i = 0; i < dxdt.size(); i++) {
+		cout << dxdt[i] << ", ";
+	}
+	cout << endl;
+	dxdt.clear();
 	
 	MatrixXd M = getM0(x, rho_, zeta_);
 	calc_inverse_inertia_matrix(M);
@@ -279,6 +292,13 @@ void Integrate::ode(const state_type &x , state_type &dxdt , double t) const {
 		}*/
 		dxdt.push_back(res(i));
 	}
+	
+	cout << "dxdt lagrange: ";
+	for (size_t i = 0; i < dxdt.size(); i++) {
+		cout << dxdt[i] << ", ";
+	}
+	cout << endl;
+	sleep(1);
 }
 
 BOOST_PYTHON_MODULE(libintegrate) {
@@ -296,73 +316,137 @@ BOOST_PYTHON_MODULE(libintegrate) {
     ;
 }
 MatrixXd Integrate::getA0(const state_type &x, const state_type &rho, const state_type &zeta) const{ 
-MatrixXd m(8, 8);
-
+MatrixXd m(6, 6); 
+m(0, 0) = 0; 
+m(0, 1) = 0; 
+m(0, 2) = 0; 
+m(0, 3) = 1; 
+m(0, 4) = 0; 
+m(0, 5) = 0; 
+m(1, 0) = 0; 
+m(1, 1) = 0; 
+m(1, 2) = 0; 
+m(1, 3) = 0; 
+m(1, 4) = 1; 
+m(1, 5) = 0; 
+m(2, 0) = 0; 
+m(2, 1) = 0; 
+m(2, 2) = 0; 
+m(2, 3) = 0; 
+m(2, 4) = 0; 
+m(2, 5) = 1; 
+m(3, 0) = M_inv_(0, 0)*(x[3]*(0.02*x[3]*cos(2*x[0]) + 0.04*x[4]*cos(2*x[0]) + 0.02*x[5]*cos(2*x[0])) + x[4]*(0.02*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0])) + x[5]*(0.01*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0]))) + M_inv_(0, 1)*(-0.02*x[3]*x[4]*cos(2*x[0]) - 0.01*x[3]*x[5]*cos(2*x[0]) + x[3]*(0.02*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0]))) + M_inv_(0, 2)*(-0.01*x[3]*x[4]*cos(2*x[0]) - 0.01*x[3]*x[5]*cos(2*x[0]) + x[3]*(0.01*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0]))); 
+m(3, 1) = M_inv_(0, 0)*(x[3]*x[4]*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) + 0.5*x[3]*x[5]*cos(x[1] + x[2]) + x[3]*(-x[4]*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) - 0.5*x[5]*cos(x[1] + x[2]))) + M_inv_(0, 1)*g_*(-1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + M_inv_(0, 1)*(pow(x[3], 2)*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) - x[3]*x[4]*(-1.5*cos(x[1]) - 0.5*cos(x[1] + x[2])) + 0.5*x[3]*x[5]*cos(x[1] + x[2])) - 0.5*M_inv_(0, 2)*g_*sin(x[1] + x[2]) + M_inv_(0, 2)*(0.5*pow(x[3], 2)*cos(x[1] + x[2]) + 0.5*x[3]*x[4]*cos(x[1] + x[2]) + 0.5*x[3]*x[5]*cos(x[1] + x[2])); 
+m(3, 2) = M_inv_(0, 0)*(x[3]*(-0.5*x[4]*cos(x[1] + x[2]) - x[5]*(0.5*cos(x[2]) + 0.5*cos(x[1] + x[2]))) + x[4]*(0.5*x[3]*cos(x[1] + x[2]) - 0.5*x[5]*cos(x[2])) + x[5]*(0.5*x[3]*cos(x[2]) + 0.5*x[3]*cos(x[1] + x[2]) + 0.5*x[4]*cos(x[2]))) - 0.5*M_inv_(0, 1)*g_*sin(x[1] + x[2]) + M_inv_(0, 1)*(x[3]*(0.5*x[3]*cos(x[1] + x[2]) - 0.5*x[5]*cos(x[2])) + x[4]*(0.5*x[3]*cos(x[1] + x[2]) - 0.5*x[5]*cos(x[2])) + x[5]*(-x[3]*(-0.5*cos(x[2]) - 0.5*cos(x[1] + x[2])) + 0.5*x[4]*cos(x[2]))) - 0.5*M_inv_(0, 2)*g_*sin(x[1] + x[2]) + M_inv_(0, 2)*(x[3]*(0.5*x[3]*cos(x[2]) + 0.5*x[3]*cos(x[1] + x[2]) + 0.5*x[4]*cos(x[2])) + x[4]*(-x[3]*(-0.5*cos(x[2]) - 0.5*cos(x[1] + x[2])) + 0.5*x[4]*cos(x[2])) + x[5]*(-x[3]*(-0.5*cos(x[2]) - 0.5*cos(x[1] + x[2])) + 0.5*x[4]*cos(x[2]))); 
+m(3, 3) = -M_inv_(0, 0)*viscous_[0] + M_inv_(0, 0)*(0.02*x[3]*sin(2*x[0]) + x[4]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) - x[4]*(-0.02*sin(2*x[0]) + 1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[5]*(0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) - x[5]*(-0.01*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2]))) + M_inv_(0, 1)*(2*x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[4]*(-0.01*sin(2*x[0]) + 1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + 0.01*x[4]*sin(2*x[0]) - x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2])) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2]))) + M_inv_(0, 2)*(x[3]*(0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) + 0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + x[4]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) + 0.005*x[5]*sin(2*x[0])); 
+m(3, 4) = M_inv_(0, 0)*(x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[3]*(0.02*sin(2*x[0]) - 1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + 0.02*x[4]*sin(2*x[0]) - x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2])) + x[5]*(0.005*sin(2*x[0]) + 0.5*sin(x[2]))) - M_inv_(0, 1)*viscous_[1] + M_inv_(0, 1)*(-x[3]*(0.01*sin(2*x[0]) - 1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + 0.01*x[3]*sin(2*x[0])) + M_inv_(0, 2)*(x[3]*(0.005*sin(2*x[0]) + 0.5*sin(x[2])) - x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) + 1.0*x[4]*sin(x[2]) + 0.5*x[5]*sin(x[2])); 
+m(3, 5) = M_inv_(0, 0)*(x[3]*(0.01*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) + 0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + x[4]*(0.005*sin(2*x[0]) - 0.5*sin(x[2])) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + 0.01*x[5]*sin(2*x[0])) + M_inv_(0, 1)*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2])) - x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2]))) - M_inv_(0, 2)*viscous_[2] + M_inv_(0, 2)*(-x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) + 0.005*x[3]*sin(2*x[0]) + 0.5*x[4]*sin(x[2])); 
+m(4, 0) = M_inv_(1, 0)*(x[3]*(0.02*x[3]*cos(2*x[0]) + 0.04*x[4]*cos(2*x[0]) + 0.02*x[5]*cos(2*x[0])) + x[4]*(0.02*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0])) + x[5]*(0.01*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0]))) + M_inv_(1, 1)*(-0.02*x[3]*x[4]*cos(2*x[0]) - 0.01*x[3]*x[5]*cos(2*x[0]) + x[3]*(0.02*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0]))) + M_inv_(1, 2)*(-0.01*x[3]*x[4]*cos(2*x[0]) - 0.01*x[3]*x[5]*cos(2*x[0]) + x[3]*(0.01*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0]))); 
+m(4, 1) = M_inv_(1, 0)*(x[3]*x[4]*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) + 0.5*x[3]*x[5]*cos(x[1] + x[2]) + x[3]*(-x[4]*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) - 0.5*x[5]*cos(x[1] + x[2]))) + M_inv_(1, 1)*g_*(-1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + M_inv_(1, 1)*(pow(x[3], 2)*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) - x[3]*x[4]*(-1.5*cos(x[1]) - 0.5*cos(x[1] + x[2])) + 0.5*x[3]*x[5]*cos(x[1] + x[2])) - 0.5*M_inv_(1, 2)*g_*sin(x[1] + x[2]) + M_inv_(1, 2)*(0.5*pow(x[3], 2)*cos(x[1] + x[2]) + 0.5*x[3]*x[4]*cos(x[1] + x[2]) + 0.5*x[3]*x[5]*cos(x[1] + x[2])); 
+m(4, 2) = M_inv_(1, 0)*(x[3]*(-0.5*x[4]*cos(x[1] + x[2]) - x[5]*(0.5*cos(x[2]) + 0.5*cos(x[1] + x[2]))) + x[4]*(0.5*x[3]*cos(x[1] + x[2]) - 0.5*x[5]*cos(x[2])) + x[5]*(0.5*x[3]*cos(x[2]) + 0.5*x[3]*cos(x[1] + x[2]) + 0.5*x[4]*cos(x[2]))) - 0.5*M_inv_(1, 1)*g_*sin(x[1] + x[2]) + M_inv_(1, 1)*(x[3]*(0.5*x[3]*cos(x[1] + x[2]) - 0.5*x[5]*cos(x[2])) + x[4]*(0.5*x[3]*cos(x[1] + x[2]) - 0.5*x[5]*cos(x[2])) + x[5]*(-x[3]*(-0.5*cos(x[2]) - 0.5*cos(x[1] + x[2])) + 0.5*x[4]*cos(x[2]))) - 0.5*M_inv_(1, 2)*g_*sin(x[1] + x[2]) + M_inv_(1, 2)*(x[3]*(0.5*x[3]*cos(x[2]) + 0.5*x[3]*cos(x[1] + x[2]) + 0.5*x[4]*cos(x[2])) + x[4]*(-x[3]*(-0.5*cos(x[2]) - 0.5*cos(x[1] + x[2])) + 0.5*x[4]*cos(x[2])) + x[5]*(-x[3]*(-0.5*cos(x[2]) - 0.5*cos(x[1] + x[2])) + 0.5*x[4]*cos(x[2]))); 
+m(4, 3) = -M_inv_(1, 0)*viscous_[0] + M_inv_(1, 0)*(0.02*x[3]*sin(2*x[0]) + x[4]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) - x[4]*(-0.02*sin(2*x[0]) + 1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[5]*(0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) - x[5]*(-0.01*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2]))) + M_inv_(1, 1)*(2*x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[4]*(-0.01*sin(2*x[0]) + 1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + 0.01*x[4]*sin(2*x[0]) - x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2])) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2]))) + M_inv_(1, 2)*(x[3]*(0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) + 0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + x[4]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) + 0.005*x[5]*sin(2*x[0])); 
+m(4, 4) = M_inv_(1, 0)*(x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[3]*(0.02*sin(2*x[0]) - 1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + 0.02*x[4]*sin(2*x[0]) - x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2])) + x[5]*(0.005*sin(2*x[0]) + 0.5*sin(x[2]))) - M_inv_(1, 1)*viscous_[1] + M_inv_(1, 1)*(-x[3]*(0.01*sin(2*x[0]) - 1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + 0.01*x[3]*sin(2*x[0])) + M_inv_(1, 2)*(x[3]*(0.005*sin(2*x[0]) + 0.5*sin(x[2])) - x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) + 1.0*x[4]*sin(x[2]) + 0.5*x[5]*sin(x[2])); 
+m(4, 5) = M_inv_(1, 0)*(x[3]*(0.01*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) + 0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + x[4]*(0.005*sin(2*x[0]) - 0.5*sin(x[2])) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + 0.01*x[5]*sin(2*x[0])) + M_inv_(1, 1)*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2])) - x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2]))) - M_inv_(1, 2)*viscous_[2] + M_inv_(1, 2)*(-x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) + 0.005*x[3]*sin(2*x[0]) + 0.5*x[4]*sin(x[2])); 
+m(5, 0) = M_inv_(2, 0)*(x[3]*(0.02*x[3]*cos(2*x[0]) + 0.04*x[4]*cos(2*x[0]) + 0.02*x[5]*cos(2*x[0])) + x[4]*(0.02*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0])) + x[5]*(0.01*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0]))) + M_inv_(2, 1)*(-0.02*x[3]*x[4]*cos(2*x[0]) - 0.01*x[3]*x[5]*cos(2*x[0]) + x[3]*(0.02*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0]))) + M_inv_(2, 2)*(-0.01*x[3]*x[4]*cos(2*x[0]) - 0.01*x[3]*x[5]*cos(2*x[0]) + x[3]*(0.01*x[4]*cos(2*x[0]) + 0.01*x[5]*cos(2*x[0]))); 
+m(5, 1) = M_inv_(2, 0)*(x[3]*x[4]*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) + 0.5*x[3]*x[5]*cos(x[1] + x[2]) + x[3]*(-x[4]*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) - 0.5*x[5]*cos(x[1] + x[2]))) + M_inv_(2, 1)*g_*(-1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + M_inv_(2, 1)*(pow(x[3], 2)*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) - x[3]*x[4]*(-1.5*cos(x[1]) - 0.5*cos(x[1] + x[2])) + 0.5*x[3]*x[5]*cos(x[1] + x[2])) - 0.5*M_inv_(2, 2)*g_*sin(x[1] + x[2]) + M_inv_(2, 2)*(0.5*pow(x[3], 2)*cos(x[1] + x[2]) + 0.5*x[3]*x[4]*cos(x[1] + x[2]) + 0.5*x[3]*x[5]*cos(x[1] + x[2])); 
+m(5, 2) = M_inv_(2, 0)*(x[3]*(-0.5*x[4]*cos(x[1] + x[2]) - x[5]*(0.5*cos(x[2]) + 0.5*cos(x[1] + x[2]))) + x[4]*(0.5*x[3]*cos(x[1] + x[2]) - 0.5*x[5]*cos(x[2])) + x[5]*(0.5*x[3]*cos(x[2]) + 0.5*x[3]*cos(x[1] + x[2]) + 0.5*x[4]*cos(x[2]))) - 0.5*M_inv_(2, 1)*g_*sin(x[1] + x[2]) + M_inv_(2, 1)*(x[3]*(0.5*x[3]*cos(x[1] + x[2]) - 0.5*x[5]*cos(x[2])) + x[4]*(0.5*x[3]*cos(x[1] + x[2]) - 0.5*x[5]*cos(x[2])) + x[5]*(-x[3]*(-0.5*cos(x[2]) - 0.5*cos(x[1] + x[2])) + 0.5*x[4]*cos(x[2]))) - 0.5*M_inv_(2, 2)*g_*sin(x[1] + x[2]) + M_inv_(2, 2)*(x[3]*(0.5*x[3]*cos(x[2]) + 0.5*x[3]*cos(x[1] + x[2]) + 0.5*x[4]*cos(x[2])) + x[4]*(-x[3]*(-0.5*cos(x[2]) - 0.5*cos(x[1] + x[2])) + 0.5*x[4]*cos(x[2])) + x[5]*(-x[3]*(-0.5*cos(x[2]) - 0.5*cos(x[1] + x[2])) + 0.5*x[4]*cos(x[2]))); 
+m(5, 3) = -M_inv_(2, 0)*viscous_[0] + M_inv_(2, 0)*(0.02*x[3]*sin(2*x[0]) + x[4]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) - x[4]*(-0.02*sin(2*x[0]) + 1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[5]*(0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) - x[5]*(-0.01*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2]))) + M_inv_(2, 1)*(2*x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[4]*(-0.01*sin(2*x[0]) + 1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + 0.01*x[4]*sin(2*x[0]) - x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2])) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2]))) + M_inv_(2, 2)*(x[3]*(0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) + 0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + x[4]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2])) + 0.005*x[5]*sin(2*x[0])); 
+m(5, 4) = M_inv_(2, 0)*(x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[3]*(0.02*sin(2*x[0]) - 1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + 0.02*x[4]*sin(2*x[0]) - x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2])) + x[5]*(0.005*sin(2*x[0]) + 0.5*sin(x[2]))) - M_inv_(2, 1)*viscous_[1] + M_inv_(2, 1)*(-x[3]*(0.01*sin(2*x[0]) - 1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + 0.01*x[3]*sin(2*x[0])) + M_inv_(2, 2)*(x[3]*(0.005*sin(2*x[0]) + 0.5*sin(x[2])) - x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) + 1.0*x[4]*sin(x[2]) + 0.5*x[5]*sin(x[2])); 
+m(5, 5) = M_inv_(2, 0)*(x[3]*(0.01*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) + 0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + x[4]*(0.005*sin(2*x[0]) - 0.5*sin(x[2])) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + 0.01*x[5]*sin(2*x[0])) + M_inv_(2, 1)*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2])) - x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2]))) - M_inv_(2, 2)*viscous_[2] + M_inv_(2, 2)*(-x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) + 0.005*x[3]*sin(2*x[0]) + 0.5*x[4]*sin(x[2])); 
 return m; 
 
 } 
 MatrixXd Integrate::getB0(const state_type &x, const state_type &rho, const state_type &zeta) const{ 
-MatrixXd m(8, 4);
- 
+MatrixXd m(6, 3); 
+m(0, 0) = 0; 
+m(0, 1) = 0; 
+m(0, 2) = 0; 
+m(1, 0) = 0; 
+m(1, 1) = 0; 
+m(1, 2) = 0; 
+m(2, 0) = 0; 
+m(2, 1) = 0; 
+m(2, 2) = 0; 
+m(3, 0) = M_inv_(0, 0); 
+m(3, 1) = M_inv_(0, 1); 
+m(3, 2) = M_inv_(0, 2); 
+m(4, 0) = M_inv_(1, 0); 
+m(4, 1) = M_inv_(1, 1); 
+m(4, 2) = M_inv_(1, 2); 
+m(5, 0) = M_inv_(2, 0); 
+m(5, 1) = M_inv_(2, 1); 
+m(5, 2) = M_inv_(2, 2); 
 return m; 
 
 } 
 MatrixXd Integrate::getV0(const state_type &x, const state_type &rho, const state_type &zeta) const{ 
-MatrixXd m(8, 4); 
-
+MatrixXd m(6, 3); 
+m(0, 0) = 0; 
+m(0, 1) = 0; 
+m(0, 2) = 0; 
+m(1, 0) = 0; 
+m(1, 1) = 0; 
+m(1, 2) = 0; 
+m(2, 0) = 0; 
+m(2, 1) = 0; 
+m(2, 2) = 0; 
+m(3, 0) = M_inv_(0, 0); 
+m(3, 1) = M_inv_(0, 1); 
+m(3, 2) = M_inv_(0, 2); 
+m(4, 0) = M_inv_(1, 0); 
+m(4, 1) = M_inv_(1, 1); 
+m(4, 2) = M_inv_(1, 2); 
+m(5, 0) = M_inv_(2, 0); 
+m(5, 1) = M_inv_(2, 1); 
+m(5, 2) = M_inv_(2, 2); 
 return m; 
 
 } 
 MatrixXd Integrate::getM0(const state_type &x, const state_type &rho, const state_type &zeta) const{ 
-MatrixXd m(4, 4); 
- 
+MatrixXd m(3, 3); 
+m(0, 0) = -0.02*pow(sin(x[0]), 2) + 3.0*cos(x[1]) + 1.0*cos(x[2]) + 1.0*cos(x[1] + x[2]) + 3.9; 
+m(0, 1) = -0.02*pow(sin(x[0]), 2) + 1.5*cos(x[1]) + 1.0*cos(x[2]) + 0.5*cos(x[1] + x[2]) + 1.62; 
+m(0, 2) = 0.005*cos(2*x[0]) + 0.5*cos(x[2]) + 0.5*cos(x[1] + x[2]) + 0.305; 
+m(1, 0) = -0.02*pow(sin(x[0]), 2) + 1.5*cos(x[1]) + 1.0*cos(x[2]) + 0.5*cos(x[1] + x[2]) + 1.62; 
+m(1, 1) = -0.02*pow(sin(x[0]), 2) + 1.0*cos(x[2]) + 1.62; 
+m(1, 2) = 0.005*cos(2*x[0]) + 0.5*cos(x[2]) + 0.305; 
+m(2, 0) = 0.005*cos(2*x[0]) + 0.5*cos(x[2]) + 0.5*cos(x[1] + x[2]) + 0.305; 
+m(2, 1) = 0.005*cos(2*x[0]) + 0.5*cos(x[2]) + 0.305; 
+m(2, 2) = -0.01*pow(sin(x[0]), 2) + 0.31; 
 return m; 
 
 } 
 MatrixXd Integrate::getF0(const state_type &x, const state_type &rho, const state_type &zeta) const{ 
-VectorXd m(8); 
-
+VectorXd m(6); 
+m(0, 0) = x[3]; 
+m(1, 0) = x[4]; 
+m(2, 0) = x[5]; 
+m(3, 0) = M_inv_(0, 0)*(rho[0] - viscous_[0]*x[3] - x[3]*(-0.01*x[3]*sin(2*x[0]) + x[4]*(-0.02*sin(2*x[0]) + 1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[5]*(-0.01*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2]))) - x[4]*(-x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) - 0.01*x[4]*sin(2*x[0]) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]))) + x[5]*(0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + 0.005*x[5]*sin(2*x[0])) + zeta[0]) + M_inv_(0, 1)*(g_*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) + rho[1] - viscous_[1]*x[4] - x[3]*(-x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) - 0.01*x[4]*sin(2*x[0]) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]))) - x[4]*(x[3]*(0.01*sin(2*x[0]) - 1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + 0.5*x[5]*sin(x[2])) - x[5]*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) - 0.5*x[4]*sin(x[2])) + zeta[1]) + M_inv_(0, 2)*(0.5*g_*cos(x[1] + x[2]) + rho[2] - viscous_[2]*x[5] + x[3]*(0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + 0.005*x[5]*sin(2*x[0])) - x[4]*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) - 0.5*x[4]*sin(x[2])) - x[5]*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) - 0.5*x[4]*sin(x[2])) + zeta[2]); 
+m(4, 0) = M_inv_(1, 0)*(rho[0] - viscous_[0]*x[3] - x[3]*(-0.01*x[3]*sin(2*x[0]) + x[4]*(-0.02*sin(2*x[0]) + 1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[5]*(-0.01*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2]))) - x[4]*(-x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) - 0.01*x[4]*sin(2*x[0]) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]))) + x[5]*(0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + 0.005*x[5]*sin(2*x[0])) + zeta[0]) + M_inv_(1, 1)*(g_*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) + rho[1] - viscous_[1]*x[4] - x[3]*(-x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) - 0.01*x[4]*sin(2*x[0]) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]))) - x[4]*(x[3]*(0.01*sin(2*x[0]) - 1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + 0.5*x[5]*sin(x[2])) - x[5]*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) - 0.5*x[4]*sin(x[2])) + zeta[1]) + M_inv_(1, 2)*(0.5*g_*cos(x[1] + x[2]) + rho[2] - viscous_[2]*x[5] + x[3]*(0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + 0.005*x[5]*sin(2*x[0])) - x[4]*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) - 0.5*x[4]*sin(x[2])) - x[5]*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) - 0.5*x[4]*sin(x[2])) + zeta[2]); 
+m(5, 0) = M_inv_(2, 0)*(rho[0] - viscous_[0]*x[3] - x[3]*(-0.01*x[3]*sin(2*x[0]) + x[4]*(-0.02*sin(2*x[0]) + 1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) + x[5]*(-0.01*sin(2*x[0]) + 0.5*sin(x[2]) + 0.5*sin(x[1] + x[2]))) - x[4]*(-x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) - 0.01*x[4]*sin(2*x[0]) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]))) + x[5]*(0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + 0.005*x[5]*sin(2*x[0])) + zeta[0]) + M_inv_(2, 1)*(g_*(1.5*cos(x[1]) + 0.5*cos(x[1] + x[2])) + rho[1] - viscous_[1]*x[4] - x[3]*(-x[3]*(1.5*sin(x[1]) + 0.5*sin(x[1] + x[2])) - 0.01*x[4]*sin(2*x[0]) + x[5]*(-0.005*sin(2*x[0]) + 0.5*sin(x[2]))) - x[4]*(x[3]*(0.01*sin(2*x[0]) - 1.5*sin(x[1]) - 0.5*sin(x[1] + x[2])) + 0.5*x[5]*sin(x[2])) - x[5]*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) - 0.5*x[4]*sin(x[2])) + zeta[1]) + M_inv_(2, 2)*(0.5*g_*cos(x[1] + x[2]) + rho[2] - viscous_[2]*x[5] + x[3]*(0.5*x[3]*sin(x[2]) + 0.5*x[3]*sin(x[1] + x[2]) + 0.005*x[4]*sin(2*x[0]) + 0.5*x[4]*sin(x[2]) + 0.005*x[5]*sin(2*x[0])) - x[4]*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) - 0.5*x[4]*sin(x[2])) - x[5]*(x[3]*(0.005*sin(2*x[0]) - 0.5*sin(x[2]) - 0.5*sin(x[1] + x[2])) - 0.5*x[4]*sin(x[2])) + zeta[2]); 
 return m; 
 
 } 
 MatrixXd Integrate::getEEJacobian(const state_type &x, const state_type &rho, const state_type &zeta) const{ 
-	MatrixXd m(6, 6); 
-	m(0, 0) = -sin(x[0])*cos(x[1]) - sin(x[0]) - sin(x[3])*cos(x[0]) + (1.0L/2.0L)*sin(-x[0] + x[1] + x[2]) - 1.0L/2.0L*sin(-x[0] + x[3] + x[4]) - 1.0L/2.0L*sin(x[0] + x[1] + x[2])*cos(x[3]) - 1.0L/2.0L*sin(x[0] + x[1] + x[2]) - 1.0L/2.0L*sin(x[0] + x[3] + x[4]) + (1.0L/4.0L)*sin(-x[0] + x[1] + x[2] + x[3]) - 1.0L/2.0L*sin(-x[0] + x[3] + x[4] + x[5]) - 1.0L/4.0L*sin(x[0] - x[1] - x[2] + x[3]) - 1.0L/2.0L*sin(x[0] + x[3] + x[4] + x[5]) + (1.0L/4.0L)*sin(-x[0] + x[1] + x[2] + x[3] + x[4]) - 1.0L/4.0L*sin(x[0] - x[1] - x[2] + x[3] + x[4]) - 1.0L/4.0L*sin(x[0] + x[1] + x[2] - x[3] - x[4]) - 1.0L/4.0L*sin(x[0] + x[1] + x[2] + x[3] + x[4]) + (1.0L/4.0L)*sin(-x[0] + x[1] + x[2] + x[3] + x[4] + x[5]) - 1.0L/4.0L*sin(x[0] - x[1] - x[2] + x[3] + x[4] + x[5]) - 1.0L/4.0L*sin(x[0] + x[1] + x[2] - x[3] - x[4] - x[5]) - 1.0L/4.0L*sin(x[0] + x[1] + x[2] + x[3] + x[4] + x[5]); 
-	m(0, 1) = (-sin(x[1]) - sin(x[1] + x[2])*cos(x[3]) - sin(x[1] + x[2])*cos(x[3] + x[4]) - sin(x[1] + x[2])*cos(x[3] + x[4] + x[5]) - sin(x[1] + x[2]))*cos(x[0]); 
-	m(0, 2) = (-sin(x[1] + x[2])*cos(x[3]) - sin(x[1] + x[2])*cos(x[3] + x[4]) - sin(x[1] + x[2])*cos(x[3] + x[4] + x[5]) - sin(x[1] + x[2]))*cos(x[0]); 
-	m(0, 3) = -1.0L/2.0L*sin(x[0] - x[3]) - 1.0L/2.0L*sin(x[0] + x[3]) + (1.0L/2.0L)*sin(-x[0] + x[3] + x[4]) - 1.0L/2.0L*sin(x[0] + x[3] + x[4]) - 1.0L/4.0L*sin(-x[0] + x[1] + x[2] + x[3]) + (1.0L/2.0L)*sin(-x[0] + x[3] + x[4] + x[5]) - 1.0L/4.0L*sin(x[0] - x[1] - x[2] + x[3]) + (1.0L/4.0L)*sin(x[0] + x[1] + x[2] - x[3]) - 1.0L/4.0L*sin(x[0] + x[1] + x[2] + x[3]) - 1.0L/2.0L*sin(x[0] + x[3] + x[4] + x[5]) - 1.0L/4.0L*sin(-x[0] + x[1] + x[2] + x[3] + x[4]) - 1.0L/4.0L*sin(x[0] - x[1] - x[2] + x[3] + x[4]) + (1.0L/4.0L)*sin(x[0] + x[1] + x[2] - x[3] - x[4]) - 1.0L/4.0L*sin(x[0] + x[1] + x[2] + x[3] + x[4]) - 1.0L/4.0L*sin(-x[0] + x[1] + x[2] + x[3] + x[4] + x[5]) - 1.0L/4.0L*sin(x[0] - x[1] - x[2] + x[3] + x[4] + x[5]) + (1.0L/4.0L)*sin(x[0] + x[1] + x[2] - x[3] - x[4] - x[5]) - 1.0L/4.0L*sin(x[0] + x[1] + x[2] + x[3] + x[4] + x[5]); 
-	m(0, 4) = (-sin(x[1] + x[2])*cos(x[3] + x[4]) - sin(x[1] + x[2])*cos(x[3] + x[4] + x[5]))*sin(x[0])*sin(x[1] + x[2]) - (sin(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4]) + sin(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4] + x[5]) + sin(x[3] + x[4])*cos(x[0]) + sin(x[3] + x[4] + x[5])*cos(x[0]))*cos(x[1] + x[2]); 
-	m(0, 5) = -(sin(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4] + x[5]) + sin(x[3] + x[4] + x[5])*cos(x[0]))*cos(x[1] + x[2]) - sin(x[0])*pow(sin(x[1] + x[2]), 2)*cos(x[3] + x[4] + x[5]); 
-	m(1, 0) = -sin(x[0])*sin(x[3]) - sin(x[0])*sin(x[3] + x[4]) - sin(x[0])*sin(x[3] + x[4] + x[5]) + cos(x[0])*cos(x[1]) + cos(x[0])*cos(x[3])*cos(x[1] + x[2]) + cos(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4]) + cos(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4] + x[5]) + cos(x[0])*cos(x[1] + x[2]) + cos(x[0]); 
-	m(1, 1) = -sin(x[0])*sin(x[1]) - sin(x[0])*sin(x[1] + x[2])*cos(x[3]) - sin(x[0])*sin(x[1] + x[2])*cos(x[3] + x[4]) - sin(x[0])*sin(x[1] + x[2])*cos(x[3] + x[4] + x[5]) - sin(x[0])*sin(x[1] + x[2]); 
-	m(1, 2) = -sin(x[0])*sin(x[1] + x[2])*cos(x[3]) - sin(x[0])*sin(x[1] + x[2])*cos(x[3] + x[4]) - sin(x[0])*sin(x[1] + x[2])*cos(x[3] + x[4] + x[5]) - sin(x[0])*sin(x[1] + x[2]); 
-	m(1, 3) = (1.0L/2.0L)*cos(x[0] - x[3]) + (1.0L/2.0L)*cos(x[0] + x[3]) + (1.0L/2.0L)*cos(-x[0] + x[3] + x[4]) + (1.0L/2.0L)*cos(x[0] + x[3] + x[4]) - 1.0L/4.0L*cos(-x[0] + x[1] + x[2] + x[3]) + (1.0L/2.0L)*cos(-x[0] + x[3] + x[4] + x[5]) + (1.0L/4.0L)*cos(x[0] - x[1] - x[2] + x[3]) - 1.0L/4.0L*cos(x[0] + x[1] + x[2] - x[3]) + (1.0L/4.0L)*cos(x[0] + x[1] + x[2] + x[3]) + (1.0L/2.0L)*cos(x[0] + x[3] + x[4] + x[5]) - 1.0L/4.0L*cos(-x[0] + x[1] + x[2] + x[3] + x[4]) + (1.0L/4.0L)*cos(x[0] - x[1] - x[2] + x[3] + x[4]) - 1.0L/4.0L*cos(x[0] + x[1] + x[2] - x[3] - x[4]) + (1.0L/4.0L)*cos(x[0] + x[1] + x[2] + x[3] + x[4]) - 1.0L/4.0L*cos(-x[0] + x[1] + x[2] + x[3] + x[4] + x[5]) + (1.0L/4.0L)*cos(x[0] - x[1] - x[2] + x[3] + x[4] + x[5]) - 1.0L/4.0L*cos(x[0] + x[1] + x[2] - x[3] - x[4] - x[5]) + (1.0L/4.0L)*cos(x[0] + x[1] + x[2] + x[3] + x[4] + x[5]); 
-	m(1, 4) = -(-sin(x[1] + x[2])*cos(x[3] + x[4]) - sin(x[1] + x[2])*cos(x[3] + x[4] + x[5]))*sin(x[1] + x[2])*cos(x[0]) + (-sin(x[0])*sin(x[3] + x[4]) - sin(x[0])*sin(x[3] + x[4] + x[5]) + cos(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4]) + cos(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4] + x[5]))*cos(x[1] + x[2]); 
-	m(1, 5) = (-sin(x[0])*sin(x[3] + x[4] + x[5]) + cos(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4] + x[5]))*cos(x[1] + x[2]) + pow(sin(x[1] + x[2]), 2)*cos(x[0])*cos(x[3] + x[4] + x[5]); 
-	m(2, 0) = 0; 
-	m(2, 1) = -sin(x[1])*sin(x[2])*sin(x[3])*sin(x[5])*cos(x[4]) + sin(x[1])*sin(x[2])*cos(x[5])*cos(x[3] + x[4]) + sin(x[3])*sin(x[4] + x[5])*cos(x[1])*cos(x[2]) + sin(x[4])*sin(x[5])*cos(x[3])*cos(x[1] + x[2]) - cos(x[1])*cos(x[2])*cos(x[3])*cos(x[4])*cos(x[5]) - cos(x[1]) - cos(x[3])*cos(x[1] + x[2]) - cos(x[1] + x[2])*cos(x[3] + x[4]) - cos(x[1] + x[2]); 
-	m(2, 2) = -sin(x[1])*sin(x[2])*sin(x[3])*sin(x[5])*cos(x[4]) + sin(x[1])*sin(x[2])*cos(x[5])*cos(x[3] + x[4]) + sin(x[3])*sin(x[4] + x[5])*cos(x[1])*cos(x[2]) + sin(x[4])*sin(x[5])*cos(x[3])*cos(x[1] + x[2]) - cos(x[1])*cos(x[2])*cos(x[3])*cos(x[4])*cos(x[5]) - cos(x[3])*cos(x[1] + x[2]) - cos(x[1] + x[2])*cos(x[3] + x[4]) - cos(x[1] + x[2]); 
-	m(2, 3) = (1.0L/2.0L)*cos(x[1] + x[2] - x[3]) - 1.0L/2.0L*cos(x[1] + x[2] + x[3]) + (1.0L/2.0L)*cos(x[1] + x[2] - x[3] - x[4]) - 1.0L/2.0L*cos(x[1] + x[2] + x[3] + x[4]) + (1.0L/2.0L)*cos(-x[1] - x[2] + x[3] + x[4] + x[5]) - 1.0L/2.0L*cos(x[1] + x[2] + x[3] + x[4] + x[5]); 
-	m(2, 4) = -(-sin(x[0])*sin(x[3] + x[4]) - sin(x[0])*sin(x[3] + x[4] + x[5]) + cos(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4]) + cos(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4] + x[5]))*sin(x[0])*sin(x[1] + x[2]) + (sin(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4]) + sin(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4] + x[5]) + sin(x[3] + x[4])*cos(x[0]) + sin(x[3] + x[4] + x[5])*cos(x[0]))*sin(x[1] + x[2])*cos(x[0]); 
-	m(2, 5) = -(-sin(x[0])*sin(x[3] + x[4] + x[5]) + cos(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4] + x[5]))*sin(x[0])*sin(x[1] + x[2]) + (sin(x[0])*cos(x[1] + x[2])*cos(x[3] + x[4] + x[5]) + sin(x[3] + x[4] + x[5])*cos(x[0]))*sin(x[1] + x[2])*cos(x[0]); 
-	m(3, 0) = 0; 
-	m(3, 1) = -sin(x[0]); 
-	m(3, 2) = -sin(x[0]); 
-	m(3, 3) = sin(x[1] + x[2])*cos(x[0]); 
-	m(3, 4) = sin(x[1] + x[2])*cos(x[0]); 
-	m(3, 5) = sin(x[1] + x[2])*cos(x[0]); 
-	m(4, 0) = 0; 
-	m(4, 1) = cos(x[0]); 
-	m(4, 2) = cos(x[0]); 
-	m(4, 3) = sin(x[0])*sin(x[1] + x[2]); 
-	m(4, 4) = sin(x[0])*sin(x[1] + x[2]); 
-	m(4, 5) = sin(x[0])*sin(x[1] + x[2]); 
-	m(5, 0) = 1; 
-	m(5, 1) = 0; 
-	m(5, 2) = 0; 
-	m(5, 3) = cos(x[1] + x[2]); 
-	m(5, 4) = cos(x[1] + x[2]); 
-	m(5, 5) = cos(x[1] + x[2]);
+MatrixXd m(6, 3); 
+m(0, 0) = -sin(x[0])*cos(x[1]) - sin(x[0])*cos(x[1] + x[2]) - sin(x[0]); 
+m(0, 1) = -sin(x[1])*cos(x[0]) - sin(x[1] + x[2])*cos(x[0]); 
+m(0, 2) = -sin(x[1] + x[2])*cos(x[0]); 
+m(1, 0) = cos(x[0])*cos(x[1]) + cos(x[0])*cos(x[1] + x[2]) + cos(x[0]); 
+m(1, 1) = -sin(x[0])*sin(x[1]) - sin(x[0])*sin(x[1] + x[2]); 
+m(1, 2) = -sin(x[0])*sin(x[1] + x[2]); 
+m(2, 0) = 0; 
+m(2, 1) = -cos(x[1]) - cos(x[1] + x[2]); 
+m(2, 2) = -cos(x[1] + x[2]); 
+m(3, 0) = 0; 
+m(3, 1) = -sin(x[0]); 
+m(3, 2) = -sin(x[0]); 
+m(4, 0) = 0; 
+m(4, 1) = cos(x[0]); 
+m(4, 2) = cos(x[0]); 
+m(5, 0) = 1; 
+m(5, 1) = 0; 
+m(5, 2) = 0; 
 return m; 
 
 } 

@@ -745,8 +745,8 @@ long Solver::multipleSearches(BeliefNode *startNode, std::function<StateInfo *()
     while (true) {
         // If we've done enough searches, stop searching.
         if (maxNumSearches != 0 && numSearches >= maxNumSearches) {
-            cout << "Max num searches reached. Time: " << tapir::clock_ms() << endl;
-            cout << "End time: " << endTime << endl;
+            //cout << "Max num searches reached. Time: " << tapir::clock_ms() << endl;
+            //cout << "End time: " << endTime << endl;
             break;
         }
         

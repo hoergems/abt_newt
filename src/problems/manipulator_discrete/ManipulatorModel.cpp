@@ -479,6 +479,7 @@ std::vector<std::unique_ptr<solver::DiscretizedPoint>> ManipulatorModel::getAllA
 
 std::unique_ptr<solver::ObservationPool> ManipulatorModel::createObservationPool(
         solver::Solver *solver) {
+	cout << "CREATE POOOL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" << endl;
     std::unique_ptr<solver::ObservationPool> ptr = 
     		std::make_unique<solver::ApproximateObservationPool>(solver, options_->max_observation_distance);
     return ptr;
@@ -719,8 +720,7 @@ std::vector<std::unique_ptr<solver::State>> ManipulatorModel::generateParticlesO
 			static_cast<shared::ManipulatorObservation const &>(obs);
 	std::vector<double> observation_vector(given_obs.getObservedJointValues().asVector());	
 	double weight_normalization_constant = 0.0;
-	std::vector<double> new_weights;
-	
+	std::vector<double> new_weights;	
 	bool all_zeroes = true;
 	int attempts1 = 0;
 	boost::timer t;
@@ -808,7 +808,7 @@ std::vector<std::unique_ptr<solver::State>> ManipulatorModel::generateParticlesO
 		
 		std::vector<std::unique_ptr<solver::State>> returned_particles;
 		for (size_t i = 0; i < particles_temp.size(); i++) {			
-			returned_particles.push_back(particles_temp[i]->copy());
+			returned_particles.push_back(particles_temp[i]->copy());			
 		}
 		
 		return returned_particles;

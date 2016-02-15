@@ -19,13 +19,14 @@ simulation_step_size: 0.001
 gravity: 9.81
 
 #################################################
+num_generated_goal_states: 1
 
-planning_velocity: 4.0
+planning_velocity: 6.0
 
 rrt_stretching_factor: 1.0
 
 # Number of simulation runs per covariance value
-num_simulation_runs: 2
+num_simulation_runs: 1
 
 # The joint control rate
 control_rate: 30.0
@@ -46,21 +47,19 @@ num_bins: 201
 ################################################1
 
 # The minimum joint state covariance
-min_process_covariance: 0.0
+min_process_covariance: 2.0
 
 # The maximum joint state covariance
 max_process_covariance: 10.0
 
-min_observation_covariance: 0.1
+min_observation_covariance: 5.0
 
 max_observation_covariance: 10.0
 
 # The number of covariance steps
-covariance_steps: 2
+covariance_steps: 1
 
-#Determines which parameter (process covariance or observation
-#covariance should be increased during simulation)
-inc_covariance: process
+inc_covariance: observation
 
 ################################################
 ## Reward parameters
@@ -84,10 +83,10 @@ exit_reward: 1000.0
 ################################################
 
 #Maximum distance between two observations to be grouped together
-max_observation_distance: 20000.14
+max_observation_distance: 300000.14
 
 # Maximum allowed steps to reach the goal
-num_steps: 3
+num_steps: 100
 
 # Planning time per step (in milliseconds)
 planning_time: 1000.0
@@ -109,10 +108,10 @@ histories_per_step: 10000
 particle_filter: observationModel
 
 # The minimum number of particles per belief
-particle_count: 800
+particle_count: 500
 
 # Minimum number of effective particles below which resampling is happening
-num_effective_particles: 801
+num_effective_particles: 1001
 
 # Strategy how to sample states from a given belief.
 # default = uniform sampling (fast)
@@ -126,7 +125,7 @@ state_sampling_strategy: default
 num_samples_weighted_lazy: 10
 
 #Maximum time to replenish particle (in seconds)
-particle_replenish_timeout: 3.0
+particle_replenish_timeout: 4.0
 
 # The maximum number of particles to plot
 particle_plot_limit: 50

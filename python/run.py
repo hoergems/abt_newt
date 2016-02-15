@@ -217,31 +217,41 @@ class SimulationRunner:
         num_actions_per_joint = self.config['num_actions_per_joint']
         environment_file = self.config['environment_file']
         robot_file = self.config['robot_file']
+        num_generated_goal_states = self.config['num_generated_goal_states']
         
         model_file = "test.xml"
-        environment_path = os.path.abspath(self.abs_path + "/../problems/" + problem + "/environment/" + environment_file)        
-        
-        logging_level = logging.WARN
-        if verbose:
-            logging_level = logging.DEBUG
-        logging.basicConfig(format='%(levelname)s: %(message)s', level=logging_level)
-        robot = Robot(os.path.abspath(self.abs_path + "/../problems/" + problem + "/model/" + robot_file))
-        utils = Utils()        
+        environment_path = os.path.abspath(self.abs_path + "/../problems/" + problem + "/environment/" + environment_file)
+        utils = Utils()      
+        if not os.path.exists(environment_path):
+            print "FILE DOES NOT EXISTS" 
+        print "load obstacles" 
         obstacles = utils.loadObstaclesXML(environment_path)
+        print "loaded obstacles"   
         
-        ja = v_double()
-        init_angles = [init_state[i] for i in xrange(len(init_state) / 2)]
-        ja[:] = init_angles
-        goal_position = v_double()
-        robot.getEndEffectorPosition(ja, goal_position)
-        
-        goal_area = v_double()
-        utils.loadGoalArea(environment_path, goal_area)
+        goal_area = v_double()        
+        utils.loadGoalArea(environment_path, goal_area)        
         if len(goal_area) == 0:
             print "ERROR: Your environment file doesn't define a goal area"
             return False
         goal_position = [goal_area[i] for i in xrange(0, 3)]
-        goal_radius = goal_area[3] 
+        goal_radius = goal_area[3]      
+        print goal_position
+        print goal_radius
+        logging_level = logging.WARN
+        if verbose:
+            logging_level = logging.DEBUG
+        logging.basicConfig(format='%(levelname)s: %(message)s', level=logging_level)
+        if not os.path.exists(self.abs_path + "/../problems/" + problem + "/model/" + robot_file):
+            print "what"
+        robot = Robot(os.path.abspath(self.abs_path + "/../problems/" + problem + "/model/" + robot_file))
+        
+        
+        ja = v_double()
+        init_angles = [init_state[i] for i in xrange(len(init_state) / 2)]
+        ja[:] = init_angles
+        
+        
+        print [goal_position[i] for i in xrange(len(goal_position))]
         
         if not self.compareEnvironmentToTmpFiles(problem, model_file, environment_path, environment_file):
             self.ik_solution_generator.setup(robot,
@@ -255,7 +265,7 @@ class SimulationRunner:
             ik_solutions = self.ik_solution_generator.generate(init_state,
                                                                goal_position,
                                                                goal_radius,
-                                                               1)                   
+                                                               num_generated_goal_states)                   
             if len(ik_solutions) == 0:
                 return None            
             self.serializer.serialize_ik_solutions([ik_solutions[i] for i in xrange(len(ik_solutions))], 

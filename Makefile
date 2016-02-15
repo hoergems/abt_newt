@@ -61,6 +61,8 @@ ifndef CFG
   CFG := $(DEFAULT_CFG)
 endif
 
+CFG := gprof
+
 # Default build target.
 DEFAULT_TARGET := all
 
@@ -167,6 +169,10 @@ ifeq ($(USE_URDF),true)
   override LIBDIRS   += -L$(OPENRAVE_LIB_DIR) -L$(URDF_LIB_DIR) -L$(VIEWER_INTERFACE_LIB_DIR)
   override POSTFLAGS += -lurdf -lviewer_interface
 endif
+
+######## Flags for eigen ######
+override CPPFLAGS += -fopenmp -mavx -mfma -DNDEBUG
+override LDFLAGS += -fopenmp -mavx -mfma -DNDEBUG
 
 
 # ----------------------------------------------------------------------

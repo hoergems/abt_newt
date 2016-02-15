@@ -27,8 +27,8 @@ MotionValidator::MotionValidator(const ompl::base::SpaceInformationPtr &si,
 bool MotionValidator::checkMotion(const std::vector<double> &s1, 
                                   const std::vector<double> &s2, 
                                   const bool &continuous_collision) const {		
-	std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_goal;
-	robot_->createRobotCollisionObjects(s2, collision_objects_goal);
+	//std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_goal;
+	//robot_->createRobotCollisionObjects(s2, collision_objects_goal);
     if (continuous_collision) {    	
     	return !collidesContinuous(s1, s2); 
     } 

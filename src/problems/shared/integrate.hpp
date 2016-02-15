@@ -84,6 +84,8 @@ namespace shared {
     	
     	void setRBDLInterface(std::shared_ptr<shared::RBDLInterface> &rbdl_interface);
     	
+    	std::shared_ptr<shared::RBDLInterface> getRBDLInterface();
+    	
     private:
 MatrixXd getEEJacobian(const state_type &x, const state_type &rho, const state_type &zeta) const; 
 MatrixXd getF0(const state_type &x, const state_type &rho, const state_type &zeta) const; 

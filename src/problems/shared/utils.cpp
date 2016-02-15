@@ -97,7 +97,9 @@ void Utils::loadObstaclesXML(std::string &obstacles_file,
 		                     std::vector<std::shared_ptr<shared::Obstacle> > &obst) {
 	std::vector<ObstacleStruct> obstacles;	
 	TiXmlDocument xml_doc;	
-    xml_doc.LoadFile(obstacles_file);    
+	cout << "load file: " << obstacles_file << endl;
+    xml_doc.LoadFile(obstacles_file); 
+    cout << "loaded file" << endl;
 	TiXmlElement *env_xml = xml_doc.FirstChildElement("Environment");
 	for (TiXmlElement* obst_xml = env_xml->FirstChildElement("KinBody"); obst_xml; obst_xml = obst_xml->NextSiblingElement("KinBody"))
 	{	
@@ -212,8 +214,10 @@ void Utils::loadGoalAreaPy(std::string env_file, std::vector<double> &goal_area)
 }
 
 void Utils::loadGoalArea(std::string &env_file, std::vector<double> &goal_area) {
-	TiXmlDocument xml_doc;	
-	xml_doc.LoadFile(env_file);    
+	TiXmlDocument xml_doc;
+	cout << "loading: " << env_file << endl;	
+	xml_doc.LoadFile(env_file); 
+	cout << "loded file" << endl;
     TiXmlElement *env_xml = xml_doc.FirstChildElement("Environment");
 	for (TiXmlElement* obst_xml = env_xml->FirstChildElement("KinBody"); obst_xml; obst_xml = obst_xml->NextSiblingElement("KinBody"))
 	{
