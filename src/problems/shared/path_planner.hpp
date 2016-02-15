@@ -3,7 +3,8 @@
 #include <boost/python.hpp>
 #include <ompl/base/StateSpace.h>
 #include <ompl/base/spaces/RealVectorBounds.h>
-#include <ompl/base/spaces/RealVectorStateSpace.h>
+//#include <ompl/base/spaces/RealVectorStateSpace.h>
+#include "RealVectorStateSpace.hpp"
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/ProblemDefinition.h>
@@ -26,6 +27,7 @@
 #include "MotionValidator.hpp"
 #include "Obstacle.hpp"
 #include "robot.hpp"
+#include "rrtconnect.hpp"
 
 #include <boost/timer.hpp>
 

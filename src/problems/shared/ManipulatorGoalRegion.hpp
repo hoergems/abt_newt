@@ -5,7 +5,8 @@
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/State.h>
 #include <ompl/base/ScopedState.h>
-#include <ompl/base/spaces/RealVectorStateSpace.h>
+//#include <ompl/base/spaces/RealVectorStateSpace.h>
+#include "RealVectorStateSpace.hpp"
 #include <ompl/base/samplers/UniformValidStateSampler.h>
 #include <ompl/util/RandomNumbers.h>
 #include "utils.hpp"

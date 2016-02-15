@@ -152,6 +152,8 @@ add_library(robot SHARED
             
 add_library(path_planner SHARED
             path_planner.cpp
+            rrtconnect.cpp            
+            RealVectorStateSpace.cpp
             MotionValidator.cpp
             ManipulatorGoalRegion.cpp
             robot.cpp

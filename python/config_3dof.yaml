@@ -19,9 +19,9 @@ simulation_step_size: 0.001
 gravity: 9.81
 
 #################################################
-num_generated_goal_states: 10
+num_generated_goal_states: 1
 
-planning_velocity: 4.0
+planning_velocity: 6.0
 
 rrt_stretching_factor: 1.0
 
@@ -148,4 +148,4 @@ load_initial_policy: False
 # Time (in milliseconds) to generate the initial policy
 initial_planning_time: 3000.0
 
-show_viewer: False
+show_viewer: True

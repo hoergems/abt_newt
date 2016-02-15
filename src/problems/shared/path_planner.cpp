@@ -21,7 +21,8 @@ PathPlanner::PathPlanner(boost::shared_ptr<shared::Robot> &robot,
     stretching_factor_(stretching_factor),
     planning_range_(delta_t_ * max_joint_velocity_),     
     check_linear_path_(check_linear_path),  
-    space_(new ompl::base::RealVectorStateSpace(dim_)),    
+    //space_(new ompl::base::RealVectorStateSpace(dim_)),
+    space_(new shared::RealVectorStateSpace(dim_)),
     si_(new ompl::base::SpaceInformation(space_)),    
     problem_definition_(new ompl::base::ProblemDefinition(si_)),
     planner_str_(planner),    
@@ -50,7 +51,8 @@ PathPlanner::PathPlanner(boost::shared_ptr<shared::Robot> &robot,
 	planning_range_ = delta_t_ * max_velocity;*/
     
     if (planner_str_ == "RRTConnect") {
-    	planner_ = boost::shared_ptr<ompl::geometric::RRTConnect>(new ompl::geometric::RRTConnect(si_));
+    	//planner_ = boost::shared_ptr<ompl::geometric::RRTConnect>(new ompl::geometric::RRTConnect(si_));
+    	planner_ = boost::shared_ptr<shared::RRTConnect>(new shared::RRTConnect(si_));
     }
     else if (planner_str_ == "RRT") {
         planner_ = boost::shared_ptr<ompl::geometric::RRT>(new ompl::geometric::RRT(si_));
@@ -97,7 +99,8 @@ void PathPlanner::setup() {
 	}
 	
 	/** Apply the bounds to the space */    
-   space_->as<ompl::base::RealVectorStateSpace>()->setBounds(bounds);
+   //space_->as<ompl::base::RealVectorStateSpace>()->setBounds(bounds);
+	space_->as<shared::RealVectorStateSpace>()->setBounds(bounds);
     
     /** Set the StateValidityChecker */    
     si_->setStateValidityChecker(boost::bind(&PathPlanner::isValid, this, _1)); 
@@ -169,7 +172,8 @@ bool PathPlanner::isValidPy(std::vector<double> &state) {
 bool PathPlanner::isValid(const ompl::base::State *state) {    
     std::vector<double> state_vec;
     for (unsigned int i = 0; i < si_->getStateSpace()->getDimension(); i++) {
-        state_vec.push_back(state->as<ompl::base::RealVectorStateSpace::StateType>()->values[i]);        
+        //state_vec.push_back(state->as<ompl::base::RealVectorStateSpace::StateType>()->values[i]);
+    	state_vec.push_back(state->as<shared::RealVectorStateSpace::StateType>()->values[i]);
     }
     return static_cast<MotionValidator &>(*motionValidator_).isValid(state_vec);
 }
@@ -360,7 +364,8 @@ std::vector<std::vector<double> > PathPlanner::solve(const std::vector<double> &
     for (size_t i=1; i<solution_path->getStates().size(); i++) {
        vals.clear();       
        for (unsigned int j = 0; j < dim_; j++) {          
-          vals.push_back(solution_path->getState(i)->as<ompl::base::RealVectorStateSpace::StateType>()->values[j]);
+          //vals.push_back(solution_path->getState(i)->as<ompl::base::RealVectorStateSpace::StateType>()->values[j]);
+    	   vals.push_back(solution_path->getState(i)->as<shared::RealVectorStateSpace::StateType>()->values[j]);
        }
        
        solution_vector.push_back(vals);

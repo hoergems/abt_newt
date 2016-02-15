@@ -32,7 +32,7 @@ class IKSolutionGenerator:
                                         max_velocity,
                                         1.0,
                                         False,
-                                        False,
+                                        True,
                                         planning_algorithm)       
         
         self.path_planner.setup()        
@@ -81,6 +81,7 @@ class IKSolutionGenerator:
             
             goal_position_vec = v_double()
             goal_position_vec[:] = goal_position
+            print "check for " + str([[goal_states[i][j] for j in xrange(len(goal_states[i]))] for i in xrange(len(goal_states))])
             self.path_planner.setGoalStates(goal_states, goal_position_vec, goal_threshold)            
             #self.path_planner.set_start_and_goal(start_state, [ik_solution], goal_position, goal_threshold)
             start_state_vec = v_double()

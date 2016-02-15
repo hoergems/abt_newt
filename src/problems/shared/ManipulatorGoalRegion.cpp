@@ -30,7 +30,8 @@ namespace shared {
     double ManipulatorGoalRegion::distanceGoal(const ompl::base::State *st) const
     {	
         std::vector<double> v1;
-        double* v = st->as<ompl::base::RealVectorStateSpace::StateType>()->values;        
+        //double* v = st->as<ompl::base::RealVectorStateSpace::StateType>()->values; 
+        double* v = st->as<shared::RealVectorStateSpace::StateType>()->values;        
         for (unsigned int i = 0; i < state_dimension_; i++) {
            v1.push_back(v[i]);          
         }
@@ -60,7 +61,8 @@ namespace shared {
     	ompl::RNG rng;
     	
         int rd = rng.uniformInt(0, goal_states_.size() - 1);   
-        double* v = st->as<ompl::base::RealVectorStateSpace::StateType>()->values;
+        //double* v = st->as<ompl::base::RealVectorStateSpace::StateType>()->values;
+        double* v = st->as<shared::RealVectorStateSpace::StateType>()->values;
         for (unsigned int i = 0; i < state_dimension_; i++) {
            v[i] = goal_states_[rd][i];
         }           
@@ -88,7 +90,8 @@ namespace shared {
     	cout << "IS SATISFIED" << endl;
     	std::vector<double> joint_angles;    	
     	for (unsigned int i = 0; i < state_dimension_; i++) {
-    		joint_angles.push_back(st->as<ompl::base::RealVectorStateSpace::StateType>()->values[i]);
+    		//joint_angles.push_back(st->as<ompl::base::RealVectorStateSpace::StateType>()->values[i]);
+    		joint_angles.push_back(st->as<shared::RealVectorStateSpace::StateType>()->values[i]);
     	}
     	std::vector<double> ee_position;
     	robot_->getEndEffectorPosition(joint_angles, ee_position);

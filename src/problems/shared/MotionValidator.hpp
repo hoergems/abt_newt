@@ -4,7 +4,8 @@
 #include <ompl/base/MotionValidator.h>
 #include <ompl/base/SpaceInformation.h>
 #include <ompl/base/State.h>
-#include <ompl/base/spaces/RealVectorStateSpace.h>
+//#include <ompl/base/spaces/RealVectorStateSpace.h>
+#include "RealVectorStateSpace.hpp"
 #include "Obstacle.hpp"
 #include "fcl/BVH/BVH_model.h"
 #include "fcl/BV/BV.h"
@@ -29,6 +30,10 @@ namespace shared {
 
             /** Check if a motion between two states is valid. This assumes that state s1 is valid */
             bool checkMotion(const ompl::base::State *s1, const ompl::base::State *s2) const;
+            
+            bool checkMotion(std::vector<std::shared_ptr<fcl::CollisionObject>> &collision_objects_start,
+            		         std::vector<std::shared_ptr<fcl::CollisionObject>> &collision_objects_goal,
+            		         const bool &continuous_collision) const;
 
             bool checkMotion(const std::vector<double> &s1, 
                              const std::vector<double> &s2,

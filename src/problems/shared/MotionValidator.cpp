@@ -40,17 +40,93 @@ bool MotionValidator::checkMotion(const std::vector<double> &s1,
 /** Check if a motion between two states is valid. This assumes that state s1 is valid */
 bool MotionValidator::checkMotion(const ompl::base::State *s1, const ompl::base::State *s2) const {	
     std::vector<double> angles1;
-    std::vector<double> angles2; 
+    std::vector<double> angles2;
     
     for (unsigned int i = 0; i < dim_; i++) {
-        angles1.push_back(s1->as<ompl::base::RealVectorStateSpace::StateType>()->values[i]);        
-        angles2.push_back(s2->as<ompl::base::RealVectorStateSpace::StateType>()->values[i]);        
+        angles1.push_back(s1->as<shared::RealVectorStateSpace::StateType>()->values[i]);        
+        angles2.push_back(s2->as<shared::RealVectorStateSpace::StateType>()->values[i]);        
     }
-    if (!satisfiesConstraints(angles2)) {
+    if (!satisfiesConstraints(angles2)) {    	
     	return false;
     }
     
-    return checkMotion(angles1, angles2, continuous_collision_);
+    bool checkMotion1 = checkMotion(angles1, angles2, continuous_collision_);
+    
+    std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_start(
+    		s1->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects());    
+    std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_goal(
+    		s2->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects());
+    
+    if (collision_objects_start.size() == 0) {
+    	cout << "create for angles: ";
+    	for (auto &k: angles1) {
+    		cout << k << ", ";
+    	}
+    	cout << endl;
+    	
+        robot_->createRobotCollisionObjects(angles1, collision_objects_start);
+        cout << collision_objects_start[1]->getTranslation() << endl;
+        cout << collision_objects_start[1]->getRotation() << endl;
+        s1->as<shared::RealVectorStateSpace::StateType>()->setCollisionObjects(collision_objects_start);        
+    }
+    else {    	
+    	cout << "===================================" << endl;
+    	cout << "got for angles: ";
+    	for (auto &k: angles1) {
+    	    cout << k << ", ";
+    	}
+    	cout << endl;
+    	cout << collision_objects_start[1]->getTranslation() << endl;
+    	cout << collision_objects_start[1]->getRotation() << endl;
+    	/**cout << "-----------------------------------" << endl;
+    	robot_->createRobotCollisionObjects(angles1, collision_objects_start1);
+    	cout << collision_objects_start1[1]->getTranslation() << endl;
+    	cout << collision_objects_start1[1]->getRotation() << endl;*/
+    }
+    
+    
+    
+    if (collision_objects_goal.size() == 0) {
+        robot_->createRobotCollisionObjects(angles2, collision_objects_goal);
+        //s2->as<shared::RealVectorStateSpace::StateType>()->setCollisionObjects(collision_objects_goal);
+        
+    }    
+    
+    bool checkMotion2 = checkMotion(collision_objects_start,
+    		                        collision_objects_goal,
+    		                        continuous_collision_);
+    //cout << "check motion1: " << checkMotion1 << endl;
+    //cout << "check motion2: " << checkMotion2 << endl;
+    sleep(1);
+    return checkMotion1;
+}
+
+bool MotionValidator::checkMotion(std::vector<std::shared_ptr<fcl::CollisionObject>> &collision_objects_start,
+            		              std::vector<std::shared_ptr<fcl::CollisionObject>> &collision_objects_goal,
+            		              const bool &continuous_collision) const {	
+    if (continuous_collision) {    	
+    	for (size_t i = 0; i < obstacles_.size(); i++) {
+            if (!obstacles_[i]->isTraversable()) {
+    		    for (size_t j = 0; j < collision_objects_start.size(); j++) {                	
+    		        if (obstacles_[i]->in_collision(collision_objects_start[j], collision_objects_goal[j])) {    		        	
+    		            return false;
+    		        }
+    		    }
+    		}
+        }
+    	
+    	return true;
+	}
+	
+	for (size_t i = 0; i < obstacles_.size(); i++) {
+        if (!obstacles_[i]->getTerrain()->isTraversable()) {        	
+		    if (obstacles_[i]->in_collision(collision_objects_goal)) {		    	
+		        return false;
+		    }
+		}
+    }	
+    return true; 
+	
 }
 
 /** Check if a motion between two states is valid. This assumes that state s1 is valid */
@@ -65,8 +141,18 @@ bool MotionValidator::satisfiesConstraints(const std::vector<double> &s1) const 
 	for (size_t i = 0; i < dim_; i++) {
 		joint_angles.push_back(s1[i]);
 	}
-	std::vector<double> lower_bounds = si_->getStateSpace()->as<ompl::base::RealVectorStateSpace>()->getBounds().low;
-	std::vector<double> upper_bounds = si_->getStateSpace()->as<ompl::base::RealVectorStateSpace>()->getBounds().high;
+	std::vector<double> lower_bounds = si_->getStateSpace()->as<shared::RealVectorStateSpace>()->getBounds().low;
+	std::vector<double> upper_bounds = si_->getStateSpace()->as<shared::RealVectorStateSpace>()->getBounds().high;
+	/**cout << "lower bounds: ";
+	for (auto &k: lower_bounds) {
+		cout << k << ", ";
+	}
+	cout << endl;
+	cout << "upper bounds: ";
+		for (auto &k: upper_bounds) {
+			cout << k << ", ";
+		}
+		cout << endl;*/
 	for (size_t i = 0; i < dim_; i++) {
 		if (s1[i] < lower_bounds[i]) {			
 			return false;			
@@ -82,7 +168,7 @@ bool MotionValidator::satisfiesConstraints(const std::vector<double> &s1) const 
 bool MotionValidator::isValid(const ompl::base::State *state) const{
 	std::vector<double> angles;	    
 	for (unsigned int i = 0; i < dim_; i++) {
-	    angles.push_back(state->as<ompl::base::RealVectorStateSpace::StateType>()->values[i]);
+	    angles.push_back(state->as<shared::RealVectorStateSpace::StateType>()->values[i]);
 	}
     
 	return isValid(angles);
@@ -97,7 +183,6 @@ bool MotionValidator::isValid(const std::vector<double> &s1) const {
 	if (!satisfiesConstraints(joint_angles) || collidesDiscrete(joint_angles)) {		
 		return false;
 	}
-	
 	
 	return true;
 	/**std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects;
