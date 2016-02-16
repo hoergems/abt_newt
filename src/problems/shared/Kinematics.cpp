@@ -43,8 +43,22 @@ void Kinematics::getPositionOfLinkN(const std::vector<double> &joint_angles, con
 
 /* Gets the end effector position for a given set of joint angles */    
 void Kinematics::getEndEffectorPosition(const std::vector<double> &joint_angles, std::vector<double> &end_effector_position) const {
-    int n = joint_angles.size();	
+    int n = joint_angles.size();
+    /**Eigen::MatrixXd res = Eigen::MatrixXd::Identity(4, 4);	
+    res << 1.0, 0.0, 0.0, joint_origins_[0][0], 
+    	   0.0, 1.0, 0.0, joint_origins_[0][1],
+    	   0.0, 0.0, 1.0, joint_origins_[0][2],
+    	   0.0, 0.0, 0.0, 1.0;
+    for (unsigned int i = 0; i < joint_angles.size(); i++) {
+    	res = getPoseOfLinkN(joint_angles[i], res, i);
+    }*/
+    
+    //end_effector_position = std::vector<double>({res(0, 3), res(1, 3), res(2, 3)});
+    //end_effector_position.push_back(res(0, 3));
+    //end_effector_position.push_back(res(1, 3));
+    //end_effector_position.push_back(res(2, 3));
     std::pair<fcl::Vec3f, fcl::Matrix3f> ee_pose = getPoseOfLinkN(joint_angles, n);
+    
     end_effector_position.push_back(ee_pose.first[0]);
     end_effector_position.push_back(ee_pose.first[1]);
     end_effector_position.push_back(ee_pose.first[2]);

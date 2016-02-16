@@ -32,6 +32,9 @@ ManipulatorState::ManipulatorState(JointValues values, boost::shared_ptr<shared:
 	}
 	
 	robot->getEndEffectorPosition(joint_angles, ee_pos);
+	/**if (!ee_pos[0]) {
+		cout << "AHHHHHHHHHHHHHHHHHHHHHH" << endl;
+	}*/
 	end_effector_position_ = std::make_shared<std::vector<double>>(ee_pos);
 }
 

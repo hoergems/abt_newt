@@ -21,7 +21,7 @@ gravity: 9.81
 #################################################
 num_generated_goal_states: 1
 
-planning_velocity: 6.0
+planning_velocity: 4.0
 
 rrt_stretching_factor: 1.0
 
@@ -35,7 +35,7 @@ control_rate: 30.0
 init_state: [0.7, 0.0, 1.5, 0.0, 0.0, 0.0]
 
 # The number of actions per joint
-num_actions_per_joint: 2
+num_actions_per_joint: 3
 
 enforce_constraints: True
 
@@ -148,4 +148,4 @@ load_initial_policy: False
 # Time (in milliseconds) to generate the initial policy
 initial_planning_time: 3000.0
 
-show_viewer: False
+show_viewer: True

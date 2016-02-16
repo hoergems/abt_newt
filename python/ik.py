@@ -6,7 +6,7 @@ def get_goal_states(robot, goal_position, obstacles, num=1):
     """
     solutions = []    
     goal_position = np.array(goal_position)
-    dof = robot.getDOF()
+    dof = robot.getDOF()    
     while len(solutions) < num:
         breaking = False   
         state = get_random_state(robot)       
@@ -18,6 +18,9 @@ def get_goal_states(robot, goal_position, obstacles, num=1):
             delta_p.extend([0.0 for i in xrange(3)])
             delta_p = np.array(delta_p)
             jacobian_inv = get_jacobian_inverse(robot, state)
+            if jacobian_inv == None:
+                breaking = True
+                break
             delta_state = np.dot(jacobian_inv, delta_p)        
             state += delta_state        
             old_dist = dist
@@ -25,11 +28,10 @@ def get_goal_states(robot, goal_position, obstacles, num=1):
             if old_dist - dist < 1e-10:
                 breaking = True
                 break
-        if not breaking:            
-            if check_constraints(robot, state) and not in_collision(robot, state, obstacles):
-                #print state
-                #sleep
+        if not breaking:    
+            if check_constraints(robot, state) and not in_collision(robot, state, obstacles):                
                 solutions.append([state[k] for k in xrange(len(state))])
+                print str(len(solutions)) + " possible solutions found"
     
     return solutions
 
@@ -87,7 +89,10 @@ def get_end_effector_position(robot, state):
     
 def get_jacobian_inverse(robot, state):
     ee_jacobian = get_jacobian(robot, state)
-    return np.linalg.pinv(ee_jacobian)
+    try: 
+        return np.linalg.pinv(ee_jacobian)
+    except:
+        return None
     
 def get_jacobian(robot, state):
     s = v_double()

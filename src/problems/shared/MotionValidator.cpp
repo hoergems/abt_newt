@@ -26,9 +26,7 @@ MotionValidator::MotionValidator(const ompl::base::SpaceInformationPtr &si,
 
 bool MotionValidator::checkMotion(const std::vector<double> &s1, 
                                   const std::vector<double> &s2, 
-                                  const bool &continuous_collision) const {		
-	//std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_goal;
-	//robot_->createRobotCollisionObjects(s2, collision_objects_goal);
+                                  const bool &continuous_collision) const {
     if (continuous_collision) {    	
     	return !collidesContinuous(s1, s2); 
     } 
@@ -38,54 +36,36 @@ bool MotionValidator::checkMotion(const std::vector<double> &s1,
 }
 
 /** Check if a motion between two states is valid. This assumes that state s1 is valid */
-bool MotionValidator::checkMotion(const ompl::base::State *s1, const ompl::base::State *s2) const {
-	//cout << "-------------------------------" << endl;
-	//cout << "MOTION VALIDATOR" << endl;
+bool MotionValidator::checkMotion(const ompl::base::State *s1, const ompl::base::State *s2) const {	
     std::vector<double> angles1;
     std::vector<double> angles2;
-    
+    const shared::RealVectorStateSpace::StateType *s1_real = s1->as<shared::RealVectorStateSpace::StateType>();
+    const shared::RealVectorStateSpace::StateType *s2_real = s2->as<shared::RealVectorStateSpace::StateType>();
     for (unsigned int i = 0; i < dim_; i++) {
-        angles1.push_back(s1->as<shared::RealVectorStateSpace::StateType>()->values[i]);        
-        angles2.push_back(s2->as<shared::RealVectorStateSpace::StateType>()->values[i]);        
-    }
-    if (!satisfiesConstraints(angles2)) {    	
-    	return false;
+        angles1.push_back(s1_real->values[i]);        
+        angles2.push_back(s2_real->values[i]);        
     }
     
     //return checkMotion(angles1, angles2, continuous_collision_);
     std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_start;
-    std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_goal;
-    //std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_start(
-    //		s1->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects());    
-    //std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_goal(
-    		//s2->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects());
+    std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects_goal; 
     
-    if (!s1->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects()) {
+    
+    
+    if (!s1_real->getCollisionObjects()) {
         robot_->createRobotCollisionObjects(angles1, collision_objects_start);
         std::shared_ptr<std::vector<std::shared_ptr<fcl::CollisionObject>>> coll_objects =
         		std::make_shared<std::vector<std::shared_ptr<fcl::CollisionObject>>>(collision_objects_start);       
-        s1->as<shared::RealVectorStateSpace::StateType>()->setCollisionObjects(coll_objects);        
+        s1_real->setCollisionObjects(coll_objects);        
     }
     else {
-    	collision_objects_start = *(s1->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects().get());    	
+    	collision_objects_start = *(s1_real->getCollisionObjects().get());    	
     }
     
-    if (!s2->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects()) {
-        robot_->createRobotCollisionObjects(angles2, collision_objects_goal);
-        //s2->as<shared::RealVectorStateSpace::StateType>()->setCollisionObjects(collision_objects_goal);        
-    } 
-    else {
-    	collision_objects_goal = *(s2->as<shared::RealVectorStateSpace::StateType>()->getCollisionObjects().get());
-    }
-    
-    bool checkMotion2 = checkMotion(collision_objects_start,
-    		                        collision_objects_goal,
-    		                        continuous_collision_);
-    /**if (checkMotion1 != checkMotion2) {
-    	cout << "AHHHHHHHHHHHH" << endl;
-    	sleep(10);
-    }*/
-    return checkMotion2;
+    robot_->createRobotCollisionObjects(angles2, collision_objects_goal);
+    return checkMotion(collision_objects_start,
+                       collision_objects_goal,
+                       continuous_collision_);
 }
 
 bool MotionValidator::checkMotion(std::vector<std::shared_ptr<fcl::CollisionObject>> &collision_objects_start,
@@ -93,24 +73,24 @@ bool MotionValidator::checkMotion(std::vector<std::shared_ptr<fcl::CollisionObje
             		              const bool &continuous_collision) const {	
     if (continuous_collision) {    	
     	for (size_t i = 0; i < obstacles_.size(); i++) {
-            if (!obstacles_[i]->isTraversable()) {
+            //if (!obstacles_[i]->isTraversable()) {
     		    for (size_t j = 0; j < collision_objects_start.size(); j++) {                	
     		        if (obstacles_[i]->in_collision(collision_objects_start[j], collision_objects_goal[j])) {    		        	
     		            return false;
     		        }
     		    }
-    		}
+    		//}
         }
     	
     	return true;
 	}
 	
 	for (size_t i = 0; i < obstacles_.size(); i++) {
-        if (!obstacles_[i]->getTerrain()->isTraversable()) {        	
+        //if (!obstacles_[i]->getTerrain()->isTraversable()) {        	
 		    if (obstacles_[i]->in_collision(collision_objects_goal)) {		    	
 		        return false;
 		    }
-		}
+		//}
     }	
     return true; 
 	
@@ -129,22 +109,16 @@ bool MotionValidator::satisfiesConstraints(const std::vector<double> &s1) const 
 		joint_angles.push_back(s1[i]);
 	}
 	std::vector<double> lower_bounds = si_->getStateSpace()->as<shared::RealVectorStateSpace>()->getBounds().low;
-	std::vector<double> upper_bounds = si_->getStateSpace()->as<shared::RealVectorStateSpace>()->getBounds().high;
-	/**cout << "lower bounds: ";
-	for (auto &k: lower_bounds) {
-		cout << k << ", ";
-	}
-	cout << endl;
-	cout << "upper bounds: ";
-		for (auto &k: upper_bounds) {
-			cout << k << ", ";
-		}
-		cout << endl;*/
+	std::vector<double> upper_bounds = si_->getStateSpace()->as<shared::RealVectorStateSpace>()->getBounds().high;	
 	for (size_t i = 0; i < dim_; i++) {
-		if (s1[i] < lower_bounds[i]) {			
+		if (s1[i] < lower_bounds[i]) {
+			cout << "RETURN FALSE1" << endl;
+			sleep(1);
 			return false;			
 		}
-		else if (s1[i] > upper_bounds[i]) {			
+		else if (s1[i] > upper_bounds[i]) {
+			cout << "RETURN FALSE2" << endl;
+			sleep(1);
 			return false;			
 		}
 	}
@@ -153,9 +127,10 @@ bool MotionValidator::satisfiesConstraints(const std::vector<double> &s1) const 
 }
 
 bool MotionValidator::isValid(const ompl::base::State *state) const{
-	std::vector<double> angles;	    
+	std::vector<double> angles;	
+	const shared::RealVectorStateSpace::StateType *state_real = state->as<shared::RealVectorStateSpace::StateType>();
 	for (unsigned int i = 0; i < dim_; i++) {
-	    angles.push_back(state->as<shared::RealVectorStateSpace::StateType>()->values[i]);
+	    angles.push_back(state_real->values[i]);
 	}
     
 	return isValid(angles);
@@ -166,23 +141,10 @@ bool MotionValidator::isValid(const std::vector<double> &s1) const {
 	for (size_t i = 0; i < dim_; i++) {
 		joint_angles.push_back(s1[i]);
 	}
-	
-	if (!satisfiesConstraints(joint_angles) || collidesDiscrete(joint_angles)) {		
+	if (collidesDiscrete(joint_angles))
 		return false;
-	}
 	
 	return true;
-	/**std::vector<std::shared_ptr<fcl::CollisionObject>> collision_objects;
-	robot_->createRobotCollisionObjects(joint_angles, collision_objects);    
-    for (size_t i = 0; i < obstacles_.size(); i++) {
-        if (!obstacles_[i]->getTerrain()->isTraversable()) {        	
-        	if (obstacles_[i]->in_collision(collision_objects)) {        		
-        		return false;
-        	}
-        }
-    }    
-    return true;*/
-	
 }
 
 bool MotionValidator::collidesDiscrete(const std::vector<double> &state) const{
