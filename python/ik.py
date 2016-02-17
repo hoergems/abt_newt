@@ -25,6 +25,7 @@ def get_goal_states(robot, goal_position, obstacles, num=1):
             state += delta_state        
             old_dist = dist
             dist = np.linalg.norm(delta_p)
+            print "dist " + str(dist)
             if old_dist - dist < 1e-10:
                 breaking = True
                 break
@@ -65,7 +66,7 @@ def get_random_state(robot):
     joint_upper_limits = v_double()
     robot.getJointLowerPositionLimits(active_joints, joint_lower_limits)
     robot.getJointUpperPositionLimits(active_joints, joint_upper_limits)
-    state = [np.random.uniform(joint_lower_limits[i], joint_upper_limits[i]) for i in xrange(len(active_joints))]
+    state = [np.random.uniform(joint_lower_limits[i], joint_upper_limits[i]) for i in xrange(len(active_joints))]    
     return np.array(state)    
     
 def transform_ee_position(robot, position):

@@ -61,14 +61,24 @@ if(PKG_CONFIG_FOUND)
     include_directories(${PYTHON_INCLUDE_DIRS})    
 endif()
 
-############################# LOAD RBDL_INTERFACE #############################
+############################# LOAD RBDL #############################
 if(PKG_CONFIG_FOUND)    
-    pkg_check_modules(RBDL rbdl_interface)
+    pkg_check_modules(RBDL rbdl)
     if(NOT RBDL_FOUND)
        message(FATAL_ERROR "RBDL could not be found")
     endif()
     include_directories(${RBDL_INCLUDE_DIRS}) 
     message("RBDL include: ${RBDL_INCLUDE_DIRS}")   
+endif()
+
+############################# LOAD RBDL_INTERFACE #############################
+if(PKG_CONFIG_FOUND)    
+    pkg_check_modules(RBDL_INTERFACE rbdl_interface)
+    if(NOT RBDL_FOUND)
+       message(FATAL_ERROR "RBDL_INTERFACE could not be found")
+    endif()
+    include_directories(${RBDL_INTERFACE_INCLUDE_DIRS}) 
+    message("RBDL include: ${RBDL_INTERFACE_INCLUDE_DIRS}")   
 endif()
 
 
@@ -142,7 +152,8 @@ link_directories(${TINYXML_LIBRARY_DIRS}
                  ${FCL_LIBRARY_DIRS}
                  ${Boost_LIBRARY_DIRS}
                  ${EIGEN_LIBRARY_DIRS}
-                 ${RBDL_LIBRARY_DIRS})
+                 ${RBDL_LIBRARY_DIRS}
+                 ${RBDL_INTERFACE_LIBRARY_DIRS})
 
 add_library(robot SHARED 
             robot.cpp
@@ -188,7 +199,8 @@ target_link_libraries (robot
                        ${FCL_LIBRARIES}
                        ${VIEWER_LIBRARIES}
                        ${TINYXML_LIBRARIES}
-                       ${RBDL_LIBRARIES})
+                       ${RBDL_LIBRARIES}
+                       ${RBDL_INTERFACE_LIBRARIES})
 
 target_link_libraries(path_planner
                       ${Boost_LIBRARIES}
@@ -199,7 +211,8 @@ target_link_libraries(path_planner
                       ${URDF_LIBRARIES}
                       ${VIEWER_LIBRARIES}
                       ${TINYXML_LIBRARIES}
-                      ${RBDL_LIBRARIES})
+                      ${RBDL_LIBRARIES}
+                      ${RBDL_INTERFACE_LIBRARIES})
                       
 target_link_libraries(obstacle                      
                       ${Boost_LIBRARIES}
