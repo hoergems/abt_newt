@@ -66,7 +66,14 @@ def get_random_state(robot):
     joint_upper_limits = v_double()
     robot.getJointLowerPositionLimits(active_joints, joint_lower_limits)
     robot.getJointUpperPositionLimits(active_joints, joint_upper_limits)
-    state = [np.random.uniform(joint_lower_limits[i], joint_upper_limits[i]) for i in xrange(len(active_joints))]    
+    state = [np.random.uniform(joint_lower_limits[i], joint_upper_limits[i]) for i in xrange(len(active_joints))] 
+    if len(active_joints) == 6:
+        state = [1.91913489548,
+                 0.41647636025,
+                 -0.641053542305,
+                 -0.628739802863,
+                 -0.0964141860436,
+                 0.336857099326]
     return np.array(state)    
     
 def transform_ee_position(robot, position):

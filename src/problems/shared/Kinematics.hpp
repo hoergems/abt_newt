@@ -27,7 +27,9 @@ namespace shared {
             
             Eigen::MatrixXd getPoseOfLinkN(const double &joint_angle, 
             		                       Eigen::MatrixXd &current_transform, 
-										   unsigned int &n) const;
+										   long unsigned int &n) const;
+            
+            Eigen::MatrixXd getEndEffectorPose(const std::vector<double> &joint_angles, bool &eigen);
             
             std::pair<fcl::Vec3f, fcl::Matrix3f> getEndEffectorPose(const std::vector<double> &joint_angles) const;
             
